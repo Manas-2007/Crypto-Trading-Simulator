@@ -4,6 +4,7 @@ import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/dashboard/Dashboard"; 
 import History from "./components/History";
 import Wishlist from "./components/Wishlist";
+import Settings from "./components/Setting";
 
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
     <Route path="/dashboard" element={<Dashboard />} />
     <Route path="/history" element={<History />} />
     <Route path="/watchlist" element={<Wishlist />} />
+    <Route path="/settings" element={<Settings />} />
   </Routes>
 </main>
       </div>
