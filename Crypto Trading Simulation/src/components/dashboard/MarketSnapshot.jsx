@@ -6,7 +6,6 @@ import {
   FiArrowDownRight,
 } from "react-icons/fi";
 
-/* ─── Injected styles ─── */
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
@@ -42,7 +41,7 @@ const styles = `
     border: 1px solid rgba(16, 185, 129, 0.28);
     background: linear-gradient(145deg, #080f10 0%, #091210 100%);
   }
-  .card-pos {
+  .card-pos:hover {
     border-color: rgba(16, 185, 129, 0.65);
     box-shadow: 0 0 22px rgba(16,185,129,0.12), 0 4px 24px rgba(0,0,0,0.5);
     animation: glowPulse 2s ease infinite;
@@ -51,26 +50,16 @@ const styles = `
     border: 1px solid rgba(239, 68, 68, 0.22);
     background: linear-gradient(145deg, #0f0808 0%, #120909 100%);
   }
-  .card-neg {
+  .card-neg:hover {
     border-color: rgba(239, 68, 68, 0.55);
     box-shadow: 0 0 22px rgba(239,68,68,0.10), 0 4px 24px rgba(0,0,0,0.5);
-  }
-
-  .chart-area {
-    background: linear-gradient(180deg, #080d12 0%, #060a0f 100%);
-    border: 1px solid rgba(16,185,129,0.14);
   }
 
   .price-mono {
     font-family: 'DM Mono', monospace;
   }
-  .label-mono {
-    font-family: 'DM Mono', monospace;
-    letter-spacing: 0.04em;
-  }
 `;
 
-/* ─── Data ─── */
 const cryptoData = [
   {
     id: 1,
@@ -135,7 +124,6 @@ const Sparkline = ({ isPositive }) => {
     >
       {/* Area fill */}
       <path d={path.fill} fill={fillCol} />
-      {/* Animated line */}
       <path
         className="sparkline-path"
         d={path.line}
@@ -145,7 +133,6 @@ const Sparkline = ({ isPositive }) => {
         strokeLinecap="round"
         style={{ filter: `drop-shadow(0 0 4px ${col})` }}
       />
-      {/* End dot */}
       <circle
         cx={isPositive ? 98 : 98}
         cy={isPositive ? 2 : 26}
@@ -158,32 +145,26 @@ const Sparkline = ({ isPositive }) => {
 };
 
 /* ─── Coin card ─── */
-const CoinCard = ({ coin, idx }) => {
+const CoinCard = ({ coin }) => {
   const isPos = coin.isPositive;
-  const col = isPos ? "emerald" : "red";
-  const hexAccent = isPos ? "#10b981" : "#ef4444";
   const bgBadge = isPos ? "rgba(16,185,129,0.10)" : "rgba(239,68,68,0.10)";
   const borderIcon = isPos ? "rgba(16,185,129,0.30)" : "rgba(239,68,68,0.30)";
   const textAccent = isPos ? "#34d399" : "#f87171";
 
   return (
     <div
-      className={`card-coin relative rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5 cursor-pointer ${isPos ? "card-pos" : "card-neg"}`}
-      style={{ padding: "14px 16px", fontFamily: "DM Sans, sans-serif" }}
+      className={`card-coin relative rounded-xl md:rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5 cursor-pointer p-3 md:p-4 ${isPos ? "card-pos" : "card-neg"}`}
+      style={{ fontFamily: "DM Sans, sans-serif" }}
     >
       {/* Top row: icon + name + badge */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          {/* Icon circle */}
+      <div className="flex items-center justify-between mb-2 md:mb-3">
+        <div className="flex items-center gap-1.5 md:gap-2.5">
           <div
-            className="flex items-center justify-center rounded-full font-bold flex-shrink-0"
+            className="flex items-center justify-center rounded-full font-bold flex-shrink-0 w-6 h-6 md:w-[34px] md:h-[34px] text-[8px] md:text-[11px]"
             style={{
-              width: 34,
-              height: 34,
               background: bgBadge,
-              border: `3px solid ${borderIcon}`,
+              border: `2px solid ${borderIcon}`,
               color: textAccent,
-              fontSize: 11,
               fontFamily: "DM Mono, monospace",
             }}
           >
@@ -191,65 +172,45 @@ const CoinCard = ({ coin, idx }) => {
           </div>
           <div>
             <p
-              className="text-white font-semibold leading-none"
-              style={{
-                fontSize: 12,
-                fontFamily: "Sora, sans-serif",
-                letterSpacing: "0.03em",
-              }}
+              className="text-white font-semibold leading-none text-[10px] md:text-xs tracking-wide"
+              style={{ fontFamily: "Sora, sans-serif" }}
             >
               {coin.name}
             </p>
-            <p
-              className="text-gray-300 mt-0.5"
-              style={{
-                fontSize: 10,
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-              }}
-            >
+            <p className="text-gray-400 mt-0.5 md:mt-1 text-[8px] md:text-[10px] uppercase tracking-wider">
               {coin.desc}
             </p>
           </div>
         </div>
 
-        {/* % badge */}
         <div
-          className="flex items-center gap-1 rounded-md px-2 py-0.5 flex-shrink-0"
+          className="flex items-center gap-0.5 md:gap-1 rounded-md px-1.5 py-0.5 md:px-2 flex-shrink-0 text-[8px] md:text-[10px]"
           style={{
             background: bgBadge,
             color: textAccent,
-            fontSize: 10,
             fontFamily: "DM Mono, monospace",
-            fontWeight: 400,
           }}
         >
           {isPos ? (
-            <FiArrowUpRight size={11} />
+            <FiArrowUpRight className="w-2.5 h-2.5 md:w-3 md:h-3" />
           ) : (
-            <FiArrowDownRight size={11} />
+            <FiArrowDownRight className="w-2.5 h-2.5 md:w-3 md:h-3" />
           )}
           {coin.change}
         </div>
       </div>
 
-      {/* Sparkline — fixed height box */}
-      <div style={{ height: 40, marginBottom: 10 }}>
+      {/* Sparkline — Responsive height */}
+      <div className="h-6 md:h-10 mb-2 md:mb-2.5">
         <Sparkline isPositive={isPos} />
       </div>
 
       {/* Bottom row: price + vol */}
       <div className="flex items-end justify-between">
-        <p
-          className="price-mono text-white font-medium leading-none"
-          style={{
-            fontSize: "clamp(13px, 1.1vw, 16px)",
-            letterSpacing: "-0.01em",
-          }}
-        >
+        <p className="price-mono text-white font-medium leading-none text-xs md:text-base tracking-tight">
           {coin.price}
         </p>
-        <p className="text-gray-300" style={{ fontSize: 9 }}>
+        <p className="text-gray-400 text-[8px] md:text-[9px] uppercase">
           VOL {coin.vol}
         </p>
       </div>
@@ -261,30 +222,25 @@ const CoinCard = ({ coin, idx }) => {
 const MarketSnapshot = () => (
   <>
     <style>{styles}</style>
-   <div className="px-3 sm:px-5 lg:px-7 pt-3 sm:pt-5 lg:pt-0 pb-3 sm:pb-5 lg:pb-7 space-y-4 sm:space-y-5"
+    <div
+      className="px-3 sm:px-5 lg:px-7 pt-3 sm:pt-5 lg:pt-0 pb-3 sm:pb-5 lg:pb-7 space-y-3 sm:space-y-4 md:space-y-5"
       style={{ fontFamily: "DM Sans, sans-serif" }}
     >
-      {/* Section label */}
       <div className="flex items-center justify-between">
         <p
-          className="text-gray-300 uppercase"
-          style={{
-            fontSize: 10,
-            fontFamily: "DM Mono, monospace",
-            letterSpacing: "0.1em",
-          }}
+          className="text-gray-400 uppercase text-[9px] md:text-[10px] tracking-widest"
+          style={{ fontFamily: "DM Mono, monospace" }}
         >
           Market Snapshot
         </p>
         <p
-          className="text-gray-300"
-          style={{ fontSize: 10, fontFamily: "DM Mono, monospace" }}
+          className="text-gray-400 text-[9px] md:text-[10px]"
+          style={{ fontFamily: "DM Mono, monospace" }}
         >
           Updated just now
         </p>
       </div>
 
-      {/* 4-card grid: 2 cols mobile → 4 cols desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4">
         {cryptoData.map((coin, i) => (
           <CoinCard key={coin.id} coin={coin} idx={i} />

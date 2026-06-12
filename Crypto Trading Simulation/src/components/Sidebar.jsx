@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FiGrid,
   FiActivity,
@@ -12,7 +12,6 @@ import {
   FiTrendingUp,
 } from "react-icons/fi";
 
-/* ─── Inline keyframes injected once ─── */
 const glowStyle = `
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap');
 
@@ -30,7 +29,7 @@ const glowStyle = `
     100% { box-shadow: 0 0 6px rgba(16,185,129,0.25), inset 0 0 6px rgba(16,185,129,0.05); }
   }
   @keyframes slideDown {
-    from { opacity:0; transform: translateY(-12px); }
+    from { opacity:0; transform: translateY(-15px); }
     to   { opacity:1; transform: translateY(0);      }
   }
 
@@ -55,7 +54,7 @@ const glowStyle = `
     animation: borderShine 4s ease-in-out infinite;
   }
   .mobile-menu-enter {
-    animation: slideDown 0.35s ease forwards;
+    animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
   .custom-scrollbar::-webkit-scrollbar        { width: 3px; }
   .custom-scrollbar::-webkit-scrollbar-track  { background: transparent; }
@@ -72,7 +71,6 @@ const menuItems = [
   { name: "Settings", icon: <FiSettings /> },
 ];
 
-/* Fallback avatar when image can't load */
 const LogoFallback = () => (
   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-900/60 to-[#0d1117]">
     <FiTrendingUp className="text-emerald-400" style={{ fontSize: "40%" }} />
@@ -99,7 +97,6 @@ const MotivationalCard = ({ compact = false }) => (
     className="quote-card relative rounded-xl overflow-hidden border border-emerald-500/40 bg-[#080d12]"
     style={{ padding: compact ? "14px 16px" : "18px 20px" }}
   >
-    {/* ambient glow blob */}
     <div
       className="absolute -top-8 -right-8 rounded-full bg-emerald-600 pointer-events-none"
       style={{
@@ -141,10 +138,17 @@ const MotivationalCard = ({ compact = false }) => (
   </div>
 );
 
-/* ══════════════════════════════════════════════════════════ */
 const Sidebar = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+  }, [mobileOpen]);
 
   const handleTab = (name) => {
     setActiveTab(name);
@@ -155,27 +159,25 @@ const Sidebar = () => {
     <>
       <style>{glowStyle}</style>
 
-      {/* ════════════════════════════════════════════
-          📱 MOBILE TOP-BAR  (< md)
-      ════════════════════════════════════════════ */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-[70] flex items-center justify-between px-4 py-3 bg-[#080d12]/95 backdrop-blur-md border-b border-emerald-900/40">
+      {/*MOBILE TOP-BAR*/}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-[70] flex items-center justify-between px-4 py-3 bg-[#05070a]/95 backdrop-blur-xl border-b border-white/10 shadow-md">
         {/* Logo + name */}
         <div className="flex items-center gap-3">
           <div
             className="logo-ring flex-shrink-0 rounded-full overflow-hidden border border-emerald-500/50"
-            style={{ width: 38, height: 38 }}
+            style={{ width: 36, height: 36 }}
           >
             <LogoImage />
           </div>
-          <div className="leading-tight">
+          <div className="leading-tight mt-0.5">
             <p
-              className="text-white font-bold text-sm tracking-wide"
+              className="text-white font-bold text-[13px] tracking-wide"
               style={{ fontFamily: "Sora, sans-serif" }}
             >
               Crypto Trading
             </p>
             <p
-              className="shimmer-text text-xs font-semibold"
+              className="shimmer-text text-[10px] font-semibold tracking-wider uppercase mt-0.5"
               style={{ fontFamily: "Sora, sans-serif" }}
             >
               Simulator
@@ -186,79 +188,78 @@ const Sidebar = () => {
         {/* Hamburger */}
         <button
           onClick={() => setMobileOpen((v) => !v)}
-          className="p-2 rounded-lg text-emerald-400 hover:text-white hover:bg-emerald-500/10 transition-all duration-200 active:scale-95"
+          className="p-2 -mr-2 rounded-lg text-emerald-400 hover:text-white hover:bg-emerald-500/10 transition-all duration-200 active:scale-95"
           aria-label="Toggle menu"
         >
-          {mobileOpen ? <FiX size={22} /> : <FiMenu size={22} />}
+          {mobileOpen ? <FiX size={24} /> : <FiMenu size={24} />}
         </button>
       </header>
 
-      {/* Spacer so page content isn't hidden under fixed bar */}
-      <div className="md:hidden h-[58px]" />
+      <div className="md:hidden h-[60px]" />
 
-      {/* ════════════════════════════════════════════
-          📱 MOBILE DRAWER  (slides down)
-      ════════════════════════════════════════════ */}
+      {/* MOBILE DRAWER */}
       {mobileOpen && (
-        <div className="md:hidden fixed top-[58px] left-0 right-0 bottom-0 z-[60] bg-[#080d12]/97 backdrop-blur-xl flex flex-col mobile-menu-enter overflow-y-auto">
-          <nav className="flex-1 px-4 pt-5 pb-2 space-y-2">
+        <div className="md:hidden fixed top-[60px] left-0 right-0 bottom-0 z-[60] bg-[#05070a]/98 backdrop-blur-2xl flex flex-col mobile-menu-enter overflow-y-auto border-t border-white/5">
+          <nav className="flex-1 px-4 pt-6 pb-2 space-y-2.5">
             {menuItems.map((item) => (
               <button
                 key={item.name}
                 onClick={() => handleTab(item.name)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-250 text-left ${
+                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 text-left ${
                   activeTab === item.name
-                    ? "bg-emerald-500/12 border border-emerald-500/30 text-emerald-400 font-semibold"
-                    : "bg-white/[0.03] border border-white/[0.05] text-gray-400 hover:text-white hover:border-emerald-900/60"
+                    ? "bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                    : "bg-transparent border border-white/5 text-gray-400 hover:text-white hover:border-white/20"
                 }`}
                 style={{ fontFamily: "DM Sans, sans-serif" }}
               >
                 <span
-                  className="text-lg flex-shrink-0"
+                  className="text-[18px] flex-shrink-0"
                   style={
                     activeTab === item.name
-                      ? { filter: "drop-shadow(0 0 6px rgba(16,185,129,0.9))" }
+                      ? { filter: "drop-shadow(0 0 8px rgba(16,185,129,0.8))" }
                       : {}
                   }
                 >
                   {item.icon}
                 </span>
-                <span className="text-sm">{item.name}</span>
+                <span
+                  className={`text-[13px] ${activeTab === item.name ? "font-bold tracking-wide" : "font-medium"}`}
+                >
+                  {item.name}
+                </span>
                 {activeTab === item.name && (
                   <span
-                    className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400"
-                    style={{ boxShadow: "0 0 6px #10b981" }}
+                    className="ml-auto w-2 h-2 rounded-full bg-emerald-400"
+                    style={{ boxShadow: "0 0 8px #10b981" }}
                   />
                 )}
               </button>
             ))}
           </nav>
 
-          <div className="px-4 pb-6 pt-2">
+          <div className="px-4 pb-8 pt-4">
             <MotivationalCard compact />
           </div>
         </div>
       )}
 
-      {/* ════════════════════════════════════════════
-          💻 DESKTOP SIDEBAR  (md+)
-      ════════════════════════════════════════════ */}
+      {/* DESKTOP SIDEBAR*/}
       <aside
-        className="hidden md:flex flex-col h-screen flex-shrink-0 border-r border-emerald-900/30 overflow-hidden"
+        className="hidden md:flex flex-col h-screen flex-shrink-0 border-r border-white/10 overflow-hidden sticky top-0"
         style={{
           width: "clamp(220px, 18vw, 280px)",
           background:
-            "linear-gradient(180deg, #080d12 0%, #0b1018 60%, #0d1420 100%)",
+            "linear-gradient(180deg, #05070a 0%, #080d12 60%, #0a0d11 100%)",
           fontFamily: "DM Sans, sans-serif",
         }}
       >
         {/* ── Logo block ── */}
-        <div className="flex flex-col items-center pt-8 pb-6 px-5 border-b border-emerald-900/30 flex-shrink-0">
+        <div className="flex flex-col items-center pt-8 pb-6 px-5 border-b border-white/10 flex-shrink-0">
           <div
-            className="logo-ring rounded-full overflow-hidden border-2 border-emerald-500/50 mb-4"
+            className="logo-ring rounded-full overflow-hidden border border-emerald-500/50 mb-4 bg-[#0a0d11]"
             style={{
-              width: "clamp(60px, 5vw, 80px)",
-              height: "clamp(60px, 5vw, 80px)",
+              width: "clamp(55px, 4.5vw, 70px)",
+              height: "clamp(55px, 4.5vw, 70px)",
             }}
           >
             <LogoImage />
@@ -268,7 +269,7 @@ const Sidebar = () => {
             className="font-bold text-white text-center leading-snug"
             style={{
               fontFamily: "Sora, sans-serif",
-              fontSize: "clamp(14px, 1.1vw, 17px)",
+              fontSize: "clamp(13px, 1vw, 16px)",
             }}
           >
             Crypto Trading
@@ -277,58 +278,45 @@ const Sidebar = () => {
             className="shimmer-text font-bold text-center"
             style={{
               fontFamily: "Sora, sans-serif",
-              fontSize: "clamp(14px, 1.1vw, 17px)",
+              fontSize: "clamp(13px, 1vw, 16px)",
             }}
           >
             Simulator
           </h2>
           <p
-            className="text-gray-300 mt-1.5 text-center"
-            style={{ fontSize: "clamp(10px, 0.75vw, 12px)" }}
+            className="text-gray-400 mt-1.5 text-center font-medium"
+            style={{ fontSize: "clamp(9px, 0.75vw, 11px)" }}
           >
             Paper Trading Platform
           </p>
         </div>
 
         {/* ── Navigation ── */}
-        <nav className="flex-1 overflow-y-auto custom-scrollbar py-5 px-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto custom-scrollbar py-5 px-4 space-y-1.5">
           {menuItems.map((item) => (
             <button
               key={item.name}
               onClick={() => setActiveTab(item.name)}
-              className={`w-full flex items-center gap-3 rounded-xl transition-all duration-250 text-left group ${
+              className={`w-full flex items-center gap-3 rounded-xl transition-all duration-200 text-left group ${
                 activeTab === item.name
-                  ? "bg-emerald-500/12 border border-emerald-300 text-emerald-400 font-semibold"
-                  : "border border-transparent text-gray-300 hover:text-gray-200 hover:bg-white/[0.04] hover:border-emerald-900/40"
+                  ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold"
+                  : "border border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/5 hover:border-white/10"
               }`}
-              style={{ padding: "10px 14px" }}
+              style={{ padding: "12px 14px" }}
             >
-              {/* Left accent bar */}
-              <span
-                className="absolute left-0 rounded-r-full transition-all duration-250"
-                style={{
-                  width: 3,
-                  height: activeTab === item.name ? 28 : 0,
-                  background: "#10b981",
-                  boxShadow: "0 0 8px #10b981",
-                  position: "relative",
-                  flexShrink: 0,
-                  display: "none",
-                }}
-              />
               <span
                 className="flex-shrink-0"
                 style={{
-                  fontSize: "clamp(16px, 1.2vw, 20px)",
+                  fontSize: "clamp(15px, 1.1vw, 18px)",
                   filter:
                     activeTab === item.name
-                      ? "drop-shadow(0 0 7px rgba(16,185,129,0.85))"
+                      ? "drop-shadow(0 0 8px rgba(16,185,129,0.8))"
                       : "none",
                 }}
               >
                 {item.icon}
               </span>
-              <span style={{ fontSize: "clamp(12px, 0.85vw, 14px)" }}>
+              <span style={{ fontSize: "clamp(12px, 0.85vw, 13px)" }}>
                 {item.name}
               </span>
               {activeTab === item.name && (
@@ -342,7 +330,7 @@ const Sidebar = () => {
         </nav>
 
         {/* ── Footer quote card ── */}
-        <div className="p-4 flex-shrink-0">
+        <div className="p-4 flex-shrink-0 border-t border-white/30">
           <MotivationalCard />
         </div>
       </aside>
