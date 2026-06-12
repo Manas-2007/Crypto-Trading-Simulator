@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { NavLink } from "react-router-dom"; 
 import {
   FiGrid,
   FiActivity,
@@ -139,7 +140,6 @@ const MotivationalCard = ({ compact = false }) => (
 );
 
 const Sidebar = () => {
-  const [activeTab, setActiveTab] = useState("Dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -150,10 +150,8 @@ const Sidebar = () => {
     }
   }, [mobileOpen]);
 
-  const handleTab = (name) => {
-    setActiveTab(name);
-    setMobileOpen(false);
-  };
+  // Helper function to generate route paths 
+  const getPath = (name) => `/${name.toLowerCase().replace(" ", "-")}`;
 
   return (
     <>
@@ -195,45 +193,56 @@ const Sidebar = () => {
         </button>
       </header>
 
-      <div className="md:hidden h-[60px]" />
 
       {/* MOBILE DRAWER */}
       {mobileOpen && (
         <div className="md:hidden fixed top-[60px] left-0 right-0 bottom-0 z-[60] bg-[#05070a]/98 backdrop-blur-2xl flex flex-col mobile-menu-enter overflow-y-auto border-t border-white/5">
           <nav className="flex-1 px-4 pt-6 pb-2 space-y-2.5">
             {menuItems.map((item) => (
-              <button
+              <NavLink
                 key={item.name}
-                onClick={() => handleTab(item.name)}
-                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 text-left ${
-                  activeTab === item.name
-                    ? "bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-                    : "bg-transparent border border-white/5 text-gray-400 hover:text-white hover:border-white/20"
-                }`}
+                to={getPath(item.name)}
+                onClick={() => setMobileOpen(false)}
+                className={({ isActive }) =>
+                  `w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 text-left ${
+                    isActive
+                      ? "bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                      : "bg-transparent border border-white/5 text-gray-400 hover:text-white hover:border-white/20"
+                  }`
+                }
                 style={{ fontFamily: "DM Sans, sans-serif" }}
               >
-                <span
-                  className="text-[18px] flex-shrink-0"
-                  style={
-                    activeTab === item.name
-                      ? { filter: "drop-shadow(0 0 8px rgba(16,185,129,0.8))" }
-                      : {}
-                  }
-                >
-                  {item.icon}
-                </span>
-                <span
-                  className={`text-[13px] ${activeTab === item.name ? "font-bold tracking-wide" : "font-medium"}`}
-                >
-                  {item.name}
-                </span>
-                {activeTab === item.name && (
-                  <span
-                    className="ml-auto w-2 h-2 rounded-full bg-emerald-400"
-                    style={{ boxShadow: "0 0 8px #10b981" }}
-                  />
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className="text-[18px] flex-shrink-0"
+                      style={
+                        isActive
+                          ? {
+                              filter:
+                                "drop-shadow(0 0 8px rgba(16,185,129,0.8))",
+                            }
+                          : {}
+                      }
+                    >
+                      {item.icon}
+                    </span>
+                    <span
+                      className={`text-[13px] ${
+                        isActive ? "font-bold tracking-wide" : "font-medium"
+                      }`}
+                    >
+                      {item.name}
+                    </span>
+                    {isActive && (
+                      <span
+                        className="ml-auto w-2 h-2 rounded-full bg-emerald-400"
+                        style={{ boxShadow: "0 0 8px #10b981" }}
+                      />
+                    )}
+                  </>
                 )}
-              </button>
+              </NavLink>
             ))}
           </nav>
 
@@ -294,38 +303,43 @@ const Sidebar = () => {
         {/* ── Navigation ── */}
         <nav className="flex-1 overflow-y-auto custom-scrollbar py-5 px-4 space-y-1.5">
           {menuItems.map((item) => (
-            <button
+            <NavLink
               key={item.name}
-              onClick={() => setActiveTab(item.name)}
-              className={`w-full flex items-center gap-3 rounded-xl transition-all duration-200 text-left group ${
-                activeTab === item.name
-                  ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold"
-                  : "border border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/5 hover:border-white/10"
-              }`}
+              to={getPath(item.name)}
+              className={({ isActive }) =>
+                `w-full flex items-center gap-3 rounded-xl transition-all duration-200 text-left group ${
+                  isActive
+                    ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold"
+                    : "border border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/5 hover:border-white/10"
+                }`
+              }
               style={{ padding: "12px 14px" }}
             >
-              <span
-                className="flex-shrink-0"
-                style={{
-                  fontSize: "clamp(15px, 1.1vw, 18px)",
-                  filter:
-                    activeTab === item.name
-                      ? "drop-shadow(0 0 8px rgba(16,185,129,0.8))"
-                      : "none",
-                }}
-              >
-                {item.icon}
-              </span>
-              <span style={{ fontSize: "clamp(12px, 0.85vw, 13px)" }}>
-                {item.name}
-              </span>
-              {activeTab === item.name && (
-                <span
-                  className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"
-                  style={{ boxShadow: "0 0 6px #10b981" }}
-                />
+              {({ isActive }) => (
+                <>
+                  <span
+                    className="flex-shrink-0"
+                    style={{
+                      fontSize: "clamp(15px, 1.1vw, 18px)",
+                      filter: isActive
+                        ? "drop-shadow(0 0 8px rgba(16,185,129,0.8))"
+                        : "none",
+                    }}
+                  >
+                    {item.icon}
+                  </span>
+                  <span style={{ fontSize: "clamp(12px, 0.85vw, 13px)" }}>
+                    {item.name}
+                  </span>
+                  {isActive && (
+                    <span
+                      className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"
+                      style={{ boxShadow: "0 0 6px #10b981" }}
+                    />
+                  )}
+                </>
               )}
-            </button>
+            </NavLink>
           ))}
         </nav>
 
