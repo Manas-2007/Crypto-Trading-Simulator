@@ -1,10 +1,8 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
-
-// Placeholder components (Tum inhe baad mein alag files mein move kar sakte ho)
-const Dashboard = () => <div className="p-10 text-3xl font-bold">Dashboard Page</div>;
-const Simulator = () => <div className="p-10 text-3xl font-bold">Simulator Page</div>;
+// Path updated to point to the new dashboard folder
+import Dashboard from "./components/dashboard/Dashboard"; 
 
 function App() {
   return (
@@ -16,9 +14,11 @@ function App() {
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/simulator" element={<Simulator />} />
-            {/* Yahan baaki pages add karte jana */}
+            {/* Root path '/' par aate hi '/dashboard' par redirect karega */}
+            <Route path="/" element={<Navigate to="/dashboard" />} />
+            
+            {/* Dashboard Route */}
+            <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         </main>
       </div>
