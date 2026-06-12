@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/dashboard/Dashboard"; 
 import History from "./components/History";
+import Wishlist from "./components/Wishlist";
 
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
     <Route path="/" element={<Navigate to="/dashboard" />} />
     <Route path="/dashboard" element={<Dashboard />} />
     <Route path="/history" element={<History />} />
+    <Route path="/watchlist" element={<Wishlist />} />
   </Routes>
 </main>
       </div>
