@@ -261,8 +261,7 @@ const CoinCard = ({ coin, idx }) => {
 const MarketSnapshot = () => (
   <>
     <style>{styles}</style>
-    <div
-      className="p-3 sm:p-5 lg:p-7 space-y-4 sm:space-y-5"
+   <div className="px-3 sm:px-5 lg:px-7 pt-3 sm:pt-5 lg:pt-0 pb-3 sm:pb-5 lg:pb-7 space-y-4 sm:space-y-5"
       style={{ fontFamily: "DM Sans, sans-serif" }}
     >
       {/* Section label */}

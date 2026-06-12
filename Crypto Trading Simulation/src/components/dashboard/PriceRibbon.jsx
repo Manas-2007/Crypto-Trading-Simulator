@@ -13,7 +13,7 @@ const tickerData = [
 
 const PriceRibbon = () => {
   return (
-<div className="mx-4 w-[calc(100%-32px)] overflow-hidden bg-[#0d1015] border border-[#1a202c] shadow-[inset_0_0_15px_rgba(0,0,0,0.4)] rounded-xl">
+<div className="mx-4 w-[calc(100%-32px)] overflow-hidden bg-[#0d1015] border border-white/30 shadow-[inset_0_0_15px_rgba(0,0,0,0.4)] rounded-xl">
       
       <style>{`
         @keyframes marquee {
@@ -30,7 +30,7 @@ const PriceRibbon = () => {
           align-items: center;
           gap: 12px;
           padding: 12px 24px;
-          border-right: 2px solid #1a202c;
+          border-right: 1px solid rgba(73, 69, 69, 0.98);
           transition: all 0.3s ease;
         }
         .premium-ticker-item:hover {

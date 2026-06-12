@@ -47,7 +47,6 @@ const glowStyle = `
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: shimmer 3.5s linear infinite;
   }
   .logo-ring {
     animation: borderShine 3s ease-in-out infinite;

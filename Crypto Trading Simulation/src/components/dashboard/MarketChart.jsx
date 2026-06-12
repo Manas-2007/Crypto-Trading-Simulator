@@ -32,12 +32,12 @@ const MarketChart = () => {
     <div className="mx-4 flex flex-col lg:flex-row gap-4 h-auto lg:h-[550px]">
       
       {/* ---------------- LEFT SIDE: CHART (Approx 75% width) ---------------- */}
-      <div className="flex-grow w-full lg:w-[75%] rounded-xl overflow-hidden border border-[#1a202c] bg-[#05070a]">
+      <div className="flex-grow w-full lg:w-[75%] rounded-xl overflow-hidden border border-white/30 bg-[#05070a]">
         <div id="tradingview_widget" ref={containerRef} className="h-[400px] lg:h-full w-full" />
       </div>
 
       {/* ---------------- RIGHT SIDE: STATS PANEL (Approx 25% width) ---------------- */}
-      <div className="w-full lg:w-[25%] rounded-xl border border-[#1a202c] bg-[#0a0d11] p-5 flex flex-col overflow-y-auto custom-scrollbar">
+      <div className="w-full lg:w-[25%] rounded-xl border border-white/30 bg-[#0a0d11] p-5 flex flex-col overflow-y-auto custom-scrollbar">
         
         {/* --- Header Info --- */}
         <div className="flex justify-between items-start">
@@ -87,7 +87,7 @@ const MarketChart = () => {
           </button>
         </div>
 
-        <hr className="border-[#1a202c] my-6" />
+        <hr className="border-white/30 my-6" />
 
         {/* --- Ranges Section --- */}
         <div className="space-y-4">
@@ -118,7 +118,7 @@ const MarketChart = () => {
           </div>
         </div>
 
-        <hr className="border-[#1a202c] my-6" />
+        <hr className="border-white/10 my-6" />
 
         {/* --- Key Stats Section --- */}
         <div className="flex-grow">
