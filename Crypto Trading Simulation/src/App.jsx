@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { FiMaximize, FiX } from "react-icons/fi"; // Icons add kiye
+import { FiMaximize, FiX } from "react-icons/fi"; 
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import Dashboard from "./components/dashboard/Dashboard"; 
@@ -43,6 +43,14 @@ function App() {
 // Wrapper component to use useLocation hook
 function LayoutWrapper({ showTiltMessage, setShowTiltMessage }) {
   const location = useLocation();
+  const mainScrollRef = useRef(null); // 1. Yahan humne ref banaya
+
+  // 2. GLOBAL SCROLL FIX: Jab bhi sidebar se page change hoga, container top par aayega
+  useEffect(() => {
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTo(0, 0); 
+    }
+  }, [location.pathname]); 
   
   return (
     <div className="flex bg-[#05070a] h-screen overflow-hidden text-white px-2 md:px-0">
@@ -55,7 +63,8 @@ function LayoutWrapper({ showTiltMessage, setShowTiltMessage }) {
           <TiltHelper show={showTiltMessage} onClose={() => setShowTiltMessage(false)} />
         )}
         
-        <main className="flex-1 overflow-y-auto custom-scrollbar pt-[45px] md:pt-0">
+        {/* 3. Ref ko <main> tag se attach kar diya */}
+        <main ref={mainScrollRef} className="flex-1 overflow-y-auto custom-scrollbar pt-[45px] md:pt-0">
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" />} />
             <Route path="/dashboard" element={<Dashboard />} />
