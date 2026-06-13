@@ -9,6 +9,7 @@ import Wishlist from "./components/Wishlist";
 import Settings from "./components/Setting";
 import Performance from "./components/Performance";
 import Trading from "./components/Trading";
+import KnowledgeHub from "./components/KnowledgeHub";
 
 // Helper component to check location
 const TiltHelper = ({ show, onClose }) => {
@@ -63,6 +64,7 @@ function LayoutWrapper({ showTiltMessage, setShowTiltMessage }) {
             <Route path="/settings" element={<Settings />} />
             <Route path="/performance" element={<Performance />} />
             <Route path="/trade-simulator" element={<Trading />} />
+            <Route path="/knowledge-hub" element={<KnowledgeHub />} />
           </Routes>
         </main>
       </div>
