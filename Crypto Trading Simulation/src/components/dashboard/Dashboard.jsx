@@ -8,7 +8,7 @@ import Footer from './Footer';
 
 const Dashboard = () => {
   return (
-<div className="p-0 space-y-8 pb-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+<div className="p-0 space-y-4 pb-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
         <MarketSnapshot />
       <PriceRibbon />
       <MarketChart />

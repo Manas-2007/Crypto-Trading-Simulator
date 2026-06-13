@@ -5,6 +5,8 @@ import {
   FiActivity,
   FiPieChart,
   FiBookOpen,
+  FiBriefcase,
+  FiRefreshCcw,
   FiStar,
   FiClock,
   FiSettings,
@@ -198,6 +200,30 @@ const Sidebar = () => {
       {mobileOpen && (
         <div className="md:hidden fixed top-[60px] left-0 right-0 bottom-0 z-[60] bg-[#05070a]/98 backdrop-blur-2xl flex flex-col mobile-menu-enter overflow-y-auto border-t border-white/5">
           <nav className="flex-1 px-4 pt-6 pb-2 space-y-2.5">
+
+        {/* --- Mobile Balance Section with Reset --- */}
+<div className="px-5 mt-2">
+  <div className="flex items-center justify-between bg-[#0a0d11] border border-white/40 p-3 rounded-xl">
+    <div className="flex items-center gap-3">
+      <div className="p-1.5 bg-white/5 rounded-md text-gray-300">
+        <FiBriefcase size={16} />
+      </div>
+      <div className="flex flex-col">
+        <span className="text-[9px] font-bold uppercase tracking-widest text-gray-300">Demo Account</span>
+        <span className="text-white font-mono font-bold text-sm">$10,234.56</span>
+      </div>
+    </div>
+    {/* Reset Icon Button */}
+    <button 
+      onClick={() => alert("Balance Reset!")} 
+      className="p-2 text-gray-300 text-red-400 bg-red-500/10 rounded-lg transition-colors"
+      title="Reset Balance"
+    >
+      <FiRefreshCcw size={16} />
+    </button>
+  </div>
+</div>
+
             {menuItems.map((item) => (
               <NavLink
                 key={item.name}

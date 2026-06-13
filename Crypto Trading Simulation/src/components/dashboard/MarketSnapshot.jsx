@@ -223,7 +223,7 @@ const MarketSnapshot = () => (
   <>
     <style>{styles}</style>
     <div
-      className="px-3 sm:px-5 lg:px-7 pt-3 sm:pt-5 lg:pt-0 pb-3 sm:pb-5 lg:pb-7 space-y-3 sm:space-y-4 md:space-y-5"
+      className="px-3 sm:px-5 lg:px-7 pt-3 sm:pt-5 lg:pt-0 pb-3 sm:pb-5 lg:pb-7 space-y-3 sm:space-y-4 md:space-y-4 "
       style={{ fontFamily: "DM Sans, sans-serif" }}
     >
       <div className="flex items-center justify-between">
