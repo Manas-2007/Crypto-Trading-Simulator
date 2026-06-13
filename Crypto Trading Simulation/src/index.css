@@ -1,0 +1,11 @@
+/* Jab user phone tilt karke landscape mode mein laayega */
+@media screen and (orientation: landscape) and (max-width: 900px) {
+  /* Sidebar ko hide kar do taki chart ko puri width mile */
+  .sidebar-container {
+    display: none !important;
+  }
+  /* Chart container ki height badha do */
+  .tradingview-widget-container {
+    height: 100vh !important;
+  }
+}
