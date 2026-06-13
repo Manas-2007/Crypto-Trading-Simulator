@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import {
+import React, { useState, useRef, useEffect } from "react";import {
   FiMonitor,
   FiDollarSign,
   FiClock,
@@ -25,24 +24,63 @@ const ToggleSwitch = ({ enabled, onChange }) => (
 );
 
 // Custom Select Dropdown
-const SelectDropdown = ({ value, options, onChange }) => (
-  <div className="relative w-32 md:w-40 shrink-0">
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full bg-[#131722] border border-white/30 text-white text-[11px] md:text-xs rounded-lg px-3 py-2 appearance-none focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer"
-    >
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
-    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-      ▼
+const SelectDropdown = ({ value, options, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Bahar click karne par dropdown close karne ka logic
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedLabel = options.find((opt) => opt.value === value)?.label || value;
+
+  return (
+    <div className="relative w-32 md:w-40 shrink-0" ref={dropdownRef}>
+      {/* Clickable Area (Triggers Dropdown) */}
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-[#131722] border border-white/30 hover:border-emerald-500 text-white text-[11px] md:text-xs rounded-lg px-3 py-2 cursor-pointer flex justify-between items-center transition-colors shadow-sm"
+      >
+        <span className="truncate">{selectedLabel}</span>
+        <span 
+          className="text-gray-400 text-[9px] transition-transform duration-200"
+          style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+        >
+          ▼
+        </span>
+      </div>
+
+      {/* The Custom Dropdown Menu (Z-index 50 taaki card ke upar dikhe) */}
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1.5 w-full bg-[#131722] border border-white/20 rounded-lg shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          {options.map((opt) => (
+            <div
+              key={opt.value}
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              className={`px-3 py-2.5 text-[11px] md:text-xs cursor-pointer transition-colors ${
+                value === opt.value
+                  ? "bg-emerald-500/20 text-emerald-400 font-bold border-l-2 border-emerald-500"
+                  : "text-gray-300 hover:bg-white/10 hover:text-white border-l-2 border-transparent"
+              }`}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 // 2. MAIN SETTINGS COMPONENT
 const Settings = () => {

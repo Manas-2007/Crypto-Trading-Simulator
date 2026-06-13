@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FiDownload } from "react-icons/fi";
 import {
   FiArrowUpRight,
   FiArrowDownRight,
@@ -306,25 +307,50 @@ const History = () => {
       <div className="bg-[#0a0d11] border border-white/30 rounded-xl p-3 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
         {/* Header & Filters */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 md:mb-6">
-          <h2 className="text-white font-extrabold text-base md:text-lg tracking-wide flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]"></span>
-            Trade History
-          </h2>
+          
+          {/* Title & Mobile Download Button */}
+          <div className="flex items-center justify-between w-full md:w-auto">
+            <h2 className="text-white font-extrabold text-base md:text-lg tracking-wide flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]"></span>
+              Trade History
+            </h2>
+            
+            {/* Mobile Button: Hidden on desktop, shows on extreme right of title in mobile */}
+            <button
+              onClick={() => window.print()}
+              className="md:hidden flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-emerald-400 border border-white/30 px-3 py-1.5 rounded-md text-[10px] font-bold transition-colors"
+            >
+              <FiDownload size={12} /> PDF
+            </button>
+          </div>
 
-          <div className="flex bg-[#05070a] p-1 rounded-lg border border-white/30 w-fit overflow-x-auto history-scrollbar">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap ${
-                  activeTab === tab
-                    ? "bg-[#1a202c] text-white border border-white/30 shadow-sm"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+          {/* Desktop Button & Tabs */}
+          <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto history-scrollbar pb-1 md:pb-0">
+            
+            {/* Desktop Button: Hidden on mobile, shows just before tabs on desktop */}
+            <button
+              onClick={() => window.print()}
+              className="hidden md:flex shrink-0 items-center gap-2 bg-white/5 hover:bg-white/10 text-emerald-400 border border-white/10 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm"
+            >
+              <FiDownload size={14} /> Download PDF
+            </button>
+
+            {/* Tabs */}
+            <div className="flex bg-[#05070a] p-1 rounded-lg border border-white/30 shrink-0">
+              {tabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap ${
+                    activeTab === tab
+                      ? "bg-[#1a202c] text-white border border-white/30 shadow-sm"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

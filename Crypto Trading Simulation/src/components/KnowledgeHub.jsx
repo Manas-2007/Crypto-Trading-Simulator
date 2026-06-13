@@ -371,10 +371,10 @@ const KnowledgeHub = () => {
       `}</style>
 
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-white/20 pb-3">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-white/20 pb-2 mt-2 md:mt-0">
         <div>
-          <h1 className="text-white font-black text-xl tracking-tighter uppercase flex items-center gap-2">
-            <FiBookOpen className="text-emerald-400" size={18} />
+          <h1 className="text-white font-black text-base md:text-lg tracking-tighter uppercase flex items-center gap-2">
+            <FiBookOpen className="text-emerald-400" size={16} />
             Knowledge Hub
           </h1>
           <p className="text-gray-500 text-[10px] uppercase tracking-widest font-bold">

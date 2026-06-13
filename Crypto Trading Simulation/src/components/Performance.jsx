@@ -175,20 +175,29 @@ const Performance = () => {
       style={{ fontFamily: "DM Sans, sans-serif" }}
     >
       {/* ─── HEADER ─── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 mt-2 md:mt-0">
+        
+        {/* Title & Description */}
         <div>
-          <h1 className="text-white font-extrabold text-xl md:text-2xl tracking-wide flex items-center gap-2">
+          <h1 className="text-white font-extrabold text-base md:text-lg tracking-wide flex items-center gap-2">
+            <FiTrendingUp className="text-emerald-400" size={16} />
             Performance Overview
           </h1>
           <p className="text-gray-400 text-[10px] md:text-xs mt-1">
             Track your trade-by-trade analytics and equity curve.
           </p>
         </div>
-        <div className="flex bg-[#0a0d11] border border-white/30 rounded-lg p-1">
+
+        {/* Responsive Tabs */}
+        <div className="flex bg-[#0a0d11] border border-white/30 rounded-lg p-1 w-full md:w-auto overflow-x-auto custom-scrollbar">
           {["Last 50 Trades", "Last 100 Trades", "All Time"].map((tab, i) => (
             <button
               key={tab}
-              className={`px-3 py-1.5 text-[10px] md:text-xs font-bold rounded-md transition-all ${i === 0 ? "bg-[#1a202c] text-white shadow-sm" : "text-gray-500 hover:text-white"}`}
+              className={`px-3 py-1.5 text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap shrink-0 ${
+                i === 0 
+                  ? "bg-[#1a202c] text-white shadow-sm border border-white/10" 
+                  : "text-gray-500 hover:text-white hover:bg-white/5"
+              }`}
             >
               {tab}
             </button>
