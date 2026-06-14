@@ -7,19 +7,24 @@ import {
   FiBriefcase
 } from 'react-icons/fi';
 
+// 1. Apna Hook import karo
+import useCryptoSocket from '../hooks/useCryptoSocket';
+
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const assetData = {
-    pair: "BTC/USDT",
-    price: "68,247.10",
-    change: "+1.35%",
-    high: "68,650.00",
-    low: "66,950.20",
-    volume: "23,456.78 BTC"
+  // 2. Hook se live data fetch karo (BTCUSDT ke liye)
+  const liveData = useCryptoSocket('btcusdt');
+  const isPositive = parseFloat(liveData.priceChangePercent) >= 0;
+
+  // 3. Numbers ko format karne ke liye helper function (taaki commas aate rahein)
+  const formatNumber = (num) => {
+    if (!num || num === '0.00') return '...';
+    return parseFloat(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
+  // Ise hum next step mein global context se connect karenge
   const currentBalance = "$10,234.56";
 
   useEffect(() => {
@@ -38,46 +43,50 @@ const Navbar = () => {
   };
 
   return (
-<header 
-  className="hidden md:flex items-center justify-between px-6 py-3 bg-[#05070a]/95 backdrop-blur-md border-b border-white/30 sticky top-0 z-50 shrink-0"
-  style={{ fontFamily: 'DM Sans, sans-serif' }}
->
+    <header 
+      className="hidden md:flex items-center justify-between px-6 py-3 bg-[#05070a]/95 backdrop-blur-md border-b border-white/30 sticky top-0 z-50 shrink-0"
+      style={{ fontFamily: 'DM Sans, sans-serif' }}
+    >
       
-      {/* ─── LEFT SECTION: Currency Stats ─── */}
+      {/* ─── LEFT SECTION: Currency Stats (NOW LIVE) ─── */}
       <div className="flex items-center gap-6 lg:gap-8">
         
         {/* Pair & Price */}
         <div className="flex items-baseline gap-3">
           <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300 transition-colors">
-            <h2 className="text-white font-extrabold text-lg tracking-wide">{assetData.pair}</h2>
+            <h2 className="text-white font-extrabold text-lg tracking-wide">BTC/USDT</h2>
             <FiChevronDown className="text-gray-400 mt-1" size={14} />
           </div>
-          <span className="text-emerald-400 font-mono font-bold text-lg">
-            {assetData.price}
+          
+          {/* Live Price with dynamic color */}
+          <span className={`font-mono font-bold text-lg ${isPositive ? 'text-emerald-400' : 'text-red-500'}`}>
+            {liveData.price !== '0.00' ? `$${formatNumber(liveData.price)}` : 'Loading...'}
           </span>
-          <span className="text-emerald-400 font-bold text-xs bg-emerald-500/10 px-1.5 py-0.5 rounded">
-            {assetData.change}
+          
+          {/* Live Change % */}
+          <span className={`font-bold text-xs px-1.5 py-0.5 rounded ${isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-500'}`}>
+            {isPositive ? '+' : ''}{liveData.priceChangePercent}%
           </span>
         </div>
 
-        {/* 24h Stats */}
+        {/* 24h Stats (NOW LIVE) */}
         <div className="flex items-center gap-5 lg:gap-8 border-l border-white/30 pl-6 lg:pl-8">
           <div className="flex flex-col">
             <span className="text-gray-400 text-[10px] uppercase font-semibold">24h High</span>
-            <span className="text-white font-mono text-xs font-medium">{assetData.high}</span>
+            <span className="text-white font-mono text-xs font-medium">${formatNumber(liveData.high)}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-gray-400 text-[10px] uppercase font-semibold">24h Low</span>
-            <span className="text-white font-mono text-xs font-medium">{assetData.low}</span>
+            <span className="text-white font-mono text-xs font-medium">${formatNumber(liveData.low)}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-gray-400 text-[10px] uppercase font-semibold">24h Volume</span>
-            <span className="text-white font-mono text-xs font-medium">{assetData.volume}</span>
+            <span className="text-white font-mono text-xs font-medium">{formatNumber(liveData.volume)} BTC</span>
           </div>
         </div>
       </div>
 
-      {/* ─── RIGHT SECTION: Balance & Settings ─── */}
+      {/* ─── RIGHT SECTION: Balance & Settings (Remains Same) ─── */}
       <div className="flex items-center gap-4 lg:gap-6">
         
         {/* Demo Account Box with Dropdown */}
@@ -125,7 +134,7 @@ const Navbar = () => {
         {/* Vertical Divider */}
         <div className="h-8 w-px bg-white/30"></div>
 
-        {/* Settings Icon (Links to /settings) */}
+        {/* Settings Icon */}
         <Link 
           to="/settings" 
           className="relative p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors group"
