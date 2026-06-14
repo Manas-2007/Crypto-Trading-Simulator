@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FiX, FiActivity, FiDollarSign, FiClock } from 'react-icons/fi';
 
-const TradeModal = ({ isOpen, onClose, asset, onTrade }) => {
-  const currentPrice = 68247.90; 
-
+const TradeModal = ({ isOpen, onClose, asset, onTrade, currentPrice, currentBalance }) => {
   const [orderType, setOrderType] = useState('Market'); 
   const [inputType, setInputType] = useState('Amount');
   
   const [amount, setAmount] = useState('');
-  const [limitPrice, setLimitPrice] = useState(currentPrice.toString());
+  const [limitPrice, setLimitPrice] = useState('0');
   const [leverage, setLeverage] = useState('1');
   const [error, setError] = useState('');
 
@@ -17,11 +15,11 @@ const TradeModal = ({ isOpen, onClose, asset, onTrade }) => {
       setOrderType('Market');
       setInputType('Amount');
       setAmount('');
-      setLimitPrice(currentPrice.toString());
+      setLimitPrice(currentPrice ? currentPrice.toString() : '0');
       setLeverage('1');
       setError('');
     }
-  }, [isOpen]);
+  }, [isOpen, currentPrice]);
 
   if (!isOpen) return null;
 
@@ -60,7 +58,6 @@ const TradeModal = ({ isOpen, onClose, asset, onTrade }) => {
     };
     
     onTrade(tradeData);
-    onClose();
   };
 
   return (
@@ -136,7 +133,8 @@ const TradeModal = ({ isOpen, onClose, asset, onTrade }) => {
                   className={`text-[10px] uppercase font-bold tracking-wider ${inputType === 'Quantity' ? 'text-white border-b border-emerald-400' : 'text-gray-400'}`}
                  >Quantity</button>
               </div>
-              <span className="text-gray-200 text-[10px]">Avail: $10,234.56</span>
+              {/* FIXED DYNAMIC BALANCE */}
+              <span className="text-gray-200 text-[10px]">Avail: ${currentBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
             </div>
 
             <div className="relative flex items-center">
@@ -189,17 +187,17 @@ const TradeModal = ({ isOpen, onClose, asset, onTrade }) => {
           {/* Action Buttons (Buy & Sell) */}
           <div className="flex items-center gap-3 pt-2">
             <button 
-    onClick={() => handleAction('Buy')}
-    className="flex-1 py-3 rounded-xl font-extrabold text-white text-sm bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-  >
-    BUY
-  </button>
-  <button 
-    onClick={() => handleAction('Sell')}
-    className="flex-1 py-3 rounded-xl font-extrabold text-white text-sm bg-red-500 hover:bg-red-600 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)]"
-  >
-    SELL
-  </button>
+              onClick={() => handleAction('Buy')}
+              className="flex-1 py-3 rounded-xl font-extrabold text-white text-sm bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+            >
+              BUY
+            </button>
+            <button 
+              onClick={() => handleAction('Sell')}
+              className="flex-1 py-3 rounded-xl font-extrabold text-white text-sm bg-red-500 hover:bg-red-600 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)]"
+            >
+              SELL
+            </button>
           </div>
 
         </div>

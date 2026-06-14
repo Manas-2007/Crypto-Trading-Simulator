@@ -7,39 +7,65 @@ import {
   FiBriefcase
 } from 'react-icons/fi';
 
-// 1. Apna Hook import karo
 import useCryptoSocket from '../hooks/useCryptoSocket';
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // 2. Hook se live data fetch karo (BTCUSDT ke liye)
-  const liveData = useCryptoSocket('btcusdt');
-  const isPositive = parseFloat(liveData.priceChangePercent) >= 0;
+  // 1. GLOBAL STATE: Track which coin is active
+  const [activeCoin, setActiveCoin] = useState(() => localStorage.getItem('activeCoin') || 'BTC');
 
-  // 3. Numbers ko format karne ke liye helper function (taaki commas aate rahein)
-  const formatNumber = (num) => {
-    if (!num || num === '0.00') return '...';
-    return parseFloat(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
+  // 2. DUMMY TRADE BALANCE
+  const [balance, setBalance] = useState(() => {
+    return parseFloat(localStorage.getItem('balance')) || 10000;
+  });
 
-  // Ise hum next step mein global context se connect karenge
-  const currentBalance = "$10,234.56";
-
+  // 3. EVENT LISTENERS: Listen for Coin Change & Balance Updates from Trading.jsx
   useEffect(() => {
+    // Dropdown close logic
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    // Sync Active Coin
+    const handleCoinChange = () => {
+      setActiveCoin(localStorage.getItem('activeCoin') || 'BTC');
+    };
+    window.addEventListener('coinChanged', handleCoinChange);
+
+    // Sync Balance
+    const handleStorageChange = () => {
+      setBalance(parseFloat(localStorage.getItem('balance')) || 10000);
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('coinChanged', handleCoinChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
+  // 4. HOOK: Fetch live data dynamically based on activeCoin
+  const liveData = useCryptoSocket(activeCoin);
+  const isPositive = parseFloat(liveData.priceChangePercent) > 0;
+
+  // Numbers ko format karne ke liye helper function
+  const formatNumber = (num) => {
+    if (!num || num === '0.00') return '...';
+    return parseFloat(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   const handleResetBalance = () => {
-    alert("Balance reset to initial starting funds! (Simulation)");
+    localStorage.setItem('balance', 10000); 
+    setBalance(10000); 
     setIsDropdownOpen(false);
+    // Trading component ko bhi batane ke liye event dispatch karo
+    window.dispatchEvent(new Event('storage'));
   };
 
   return (
@@ -48,13 +74,14 @@ const Navbar = () => {
       style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
       
-      {/* ─── LEFT SECTION: Currency Stats (NOW LIVE) ─── */}
+      {/* ─── LEFT SECTION: Currency Stats (NOW LIVE & DYNAMIC) ─── */}
       <div className="flex items-center gap-6 lg:gap-8">
         
         {/* Pair & Price */}
         <div className="flex items-baseline gap-3">
           <div className="flex items-center gap-1 cursor-pointer hover:text-gray-300 transition-colors">
-            <h2 className="text-white font-extrabold text-lg tracking-wide">BTC/USDT</h2>
+            {/* Dynamic Coin Name */}
+            <h2 className="text-white font-extrabold text-lg tracking-wide uppercase">{activeCoin}/USDT</h2>
             <FiChevronDown className="text-gray-400 mt-1" size={14} />
           </div>
           
@@ -69,7 +96,7 @@ const Navbar = () => {
           </span>
         </div>
 
-        {/* 24h Stats (NOW LIVE) */}
+        {/* 24h Stats */}
         <div className="flex items-center gap-5 lg:gap-8 border-l border-white/30 pl-6 lg:pl-8">
           <div className="flex flex-col">
             <span className="text-gray-400 text-[10px] uppercase font-semibold">24h High</span>
@@ -81,12 +108,13 @@ const Navbar = () => {
           </div>
           <div className="flex flex-col">
             <span className="text-gray-400 text-[10px] uppercase font-semibold">24h Volume</span>
-            <span className="text-white font-mono text-xs font-medium">{formatNumber(liveData.volume)} BTC</span>
+            {/* Dynamic Volume Coin Name */}
+            <span className="text-white font-mono text-xs font-medium uppercase">{formatNumber(liveData.volume)} {activeCoin}</span>
           </div>
         </div>
       </div>
 
-      {/* ─── RIGHT SECTION: Balance & Settings (Remains Same) ─── */}
+      {/* ─── RIGHT SECTION: Balance & Settings ─── */}
       <div className="flex items-center gap-4 lg:gap-6">
         
         {/* Demo Account Box with Dropdown */}
@@ -103,7 +131,7 @@ const Navbar = () => {
                 Demo Account
               </span>
               <span className="text-white font-mono font-bold text-sm leading-none">
-                {currentBalance}
+                {'$' + balance.toLocaleString(undefined, {minimumFractionDigits: 2})}
               </span>
             </div>
             <div className="ml-2 text-gray-400 group-hover:text-white transition-colors">
@@ -116,7 +144,7 @@ const Navbar = () => {
             <div className="absolute right-0 mt-2 w-48 bg-[#0a0d11] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-fade-in origin-top-right">
               <div className="p-3 border-b border-white/5">
                 <p className="text-gray-400 text-[10px] uppercase font-bold mb-1">Available Funds</p>
-                <p className="text-white font-mono font-bold">{currentBalance}</p>
+                <p className="text-white font-mono font-bold">{'$' + balance.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
               </div>
               <div className="p-1.5">
                 <button 
