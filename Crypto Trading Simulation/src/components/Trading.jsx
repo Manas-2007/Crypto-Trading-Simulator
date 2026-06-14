@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, memo, useState } from "react";
+import io from "socket.io-client";
 import useCryptoSocket from "../hooks/useCryptoSocket";
 import {
   FiTrendingUp,
@@ -424,6 +425,13 @@ const Trading = () => {
   );
 
   const liveData = useCryptoSocket(activeCoin);
+  const [liveTickers, setLiveTickers] = useState({});
+
+  useEffect(() => {
+    const socket = io("http://localhost:5000");
+    socket.on("all_tickers", (data) => setLiveTickers(data));
+    return () => socket.disconnect();
+  }, []);
 
   // Sync balance with Navbar
   useEffect(() => {
@@ -576,7 +584,7 @@ const Trading = () => {
           </div>
         </div>
 
-        {/* ─── DESKTOP VIEW ─── */}
+       {/* ─── DESKTOP VIEW ─── */}
         <div className="hidden md:block bg-[#0a0d11] border border-white/30 rounded-xl p-4 shadow-lg overflow-x-auto custom-scrollbar">
           <table className="w-full min-w-[1100px] text-left border-collapse">
             <thead>
@@ -592,155 +600,139 @@ const Trading = () => {
                 <th className="pb-4 font-semibold text-center pr-2">Action</th>
               </tr>
             </thead>
+            {/* ─── DESKTOP VIEW KI TBODY REPLACE KARO ─── */}
             <tbody className="text-sm">
-              {cryptoData.map((coin) => (
-                <tr
-                  key={coin.id}
-                  onClick={() => handleCoinSwitch(coin.asset)}
-                  className={`border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer ${activeCoin === coin.asset ? "bg-white/5 border-l-2 border-l-emerald-500" : ""}`}
-                >
-                  <td className="py-4 pl-2 text-gray-300 font-mono text-xs">
-                    #{coin.rank}
-                  </td>
-                  <td className="py-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-8 h-8 rounded-full ${coin.color} flex justify-center items-center text-white font-bold text-[10px] shadow-lg`}
+              {cryptoData.map((coin) => {
+                // 🔴 LIVE DATA LOGIC
+                const ticker = liveTickers[`${coin.asset}USDT`];
+                const livePrice = ticker ? parseFloat(ticker.c).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : coin.price;
+                const changeVal = ticker ? parseFloat(ticker.P) : parseFloat(coin.change);
+                const liveChange = ticker ? Math.abs(changeVal).toFixed(2) + "%" : coin.change.replace('+', '').replace('-', '');
+                const isUp = changeVal >= 0;
+                const liveVol = ticker ? parseFloat(ticker.v).toLocaleString('en-US', { maximumFractionDigits: 0 }) : coin.vol;
+
+                // 🔴 DYNAMIC TREND LOGIC (RSI KE BASIS PAR)
+                const rsiValue = parseFloat(coin.rsi);
+                const trendLabel = rsiValue >= 60 ? "Bullish" : rsiValue <= 40 ? "Bearish" : "Neutral";
+                const trendColor = rsiValue >= 60 ? "text-emerald-400" : rsiValue <= 40 ? "text-red-500" : "text-gray-400";
+
+                return (
+                  <tr
+                    key={coin.id}
+                    onClick={() => handleCoinSwitch(coin.asset)}
+                    className={`border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer ${activeCoin === coin.asset ? 'bg-white/5 border-l-2 border-l-emerald-500' : ''}`}
+                  >
+                    <td className="py-4 pl-2 text-gray-300 font-mono text-xs">#{coin.rank}</td>
+                    <td className="py-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full ${coin.color} flex justify-center items-center text-white font-bold text-[10px] shadow-lg`}>
+                          {coin.asset.charAt(0)}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-white leading-tight">{coin.asset}</span>
+                          <span className="text-gray-500 text-[10px]">{coin.name}</span>
+                        </div>
+                      </div>
+                    </td>
+                    
+                    {/* LIVE COLUMNS */}
+                    <td className="py-4 text-right text-white font-mono font-bold">${livePrice}</td>
+                    <td className={`py-4 text-right font-mono font-bold text-xs ${isUp ? "text-emerald-400" : "text-red-500"}`}>
+                      <div className="flex items-center justify-end gap-1">
+                        {isUp ? <FiTrendingUp size={12} /> : <FiTrendingDown size={12} />}
+                        {isUp ? "+" : "-"}{liveChange}
+                      </div>
+                    </td>
+                    <td className="py-4 text-right text-gray-400 font-mono text-xs">{liveVol}</td>
+                    
+                    {/* STATIC COLUMNS */}
+                    <td className="py-4 text-right text-gray-400 font-mono text-xs">{coin.mcap}</td>
+                    <td className="py-4 text-right text-gray-300 font-mono text-xs">{coin.rsi}</td>
+                    <td className={`py-4 text-right font-bold text-xs ${trendColor}`}>
+                      {trendLabel}
+                    </td>
+                    <td className="py-4 text-center pr-2">
+                      <button
+                        onClick={(e) => openTradeModal(e, coin.asset)}
+                        className="bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white border border-emerald-500/30 px-6 py-2 rounded-md text-xs font-bold transition-all shadow-sm"
                       >
-                        {coin.asset.charAt(0)}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-white leading-tight">
-                          {coin.asset}
-                        </span>
-                        <span className="text-gray-500 text-[10px]">
-                          {coin.name}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 text-right text-white font-mono font-bold">
-                    ${coin.price}
-                  </td>
-                  <td
-                    className={`py-4 text-right font-mono font-bold text-xs ${coin.isUp ? "text-emerald-400" : "text-red-500"}`}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      {coin.isUp ? (
-                        <FiTrendingUp size={12} />
-                      ) : (
-                        <FiTrendingDown size={12} />
-                      )}
-                      {coin.change}
-                    </div>
-                  </td>
-                  <td className="py-4 text-right text-gray-400 font-mono text-xs">
-                    {coin.vol}
-                  </td>
-                  <td className="py-4 text-right text-gray-400 font-mono text-xs">
-                    {coin.mcap}
-                  </td>
-                  <td className="py-4 text-right text-gray-300 font-mono text-xs">
-                    {coin.rsi}
-                  </td>
-                  <td
-                    className={`py-4 text-right font-bold text-xs ${coin.trend === "Bullish" ? "text-emerald-400" : coin.trend === "Bearish" ? "text-red-500" : "text-gray-400"}`}
-                  >
-                    {coin.trend}
-                  </td>
-                  <td className="py-4 text-center pr-2">
-                    <button
-                      onClick={(e) => openTradeModal(e, coin.asset)}
-                      className="bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white border border-emerald-500/30 px-6 py-2 rounded-md text-xs font-bold transition-all shadow-sm"
-                    >
-                      Trade {coin.asset}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                        Trade {coin.asset}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
-        {/* ─── MOBILE VIEW ─── */}
+        {/* ─── MOBILE VIEW KO REPLACE KARO ─── */}
         <div className="md:hidden flex flex-col gap-4 pb-4">
-          {cryptoData.map((coin) => (
-            <div
-              key={coin.id}
-              onClick={() => handleCoinSwitch(coin.asset)}
-              className={`bg-[#0a0d11] border border-white/40 p-4 rounded-xl flex flex-col gap-3 shadow-lg relative overflow-hidden cursor-pointer ${activeCoin === coin.asset ? "border-emerald-500" : ""}`}
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-10 h-10 rounded-full ${coin.color} flex justify-center items-center text-white font-bold text-xs`}
-                  >
-                    {coin.asset.charAt(0)}
+          {cryptoData.map((coin) => {
+            // 🔴 LIVE DATA LOGIC (Same as Desktop)
+            const ticker = liveTickers[`${coin.asset}USDT`];
+            const livePrice = ticker ? parseFloat(ticker.c).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : coin.price;
+            const changeVal = ticker ? parseFloat(ticker.P) : parseFloat(coin.change);
+            const liveChange = ticker ? Math.abs(changeVal).toFixed(2) + "%" : coin.change.replace('+', '').replace('-', '');
+            const isUp = changeVal >= 0;
+            const liveVol = ticker ? parseFloat(ticker.v).toLocaleString('en-US', { maximumFractionDigits: 0 }) : coin.vol;
+
+            // 🔴 DYNAMIC TREND LOGIC (RSI KE BASIS PAR)
+            const rsiValue = parseFloat(coin.rsi);
+            const trendLabel = rsiValue >= 60 ? "Bullish" : rsiValue <= 40 ? "Bearish" : "Neutral";
+            const trendColor = rsiValue >= 60 ? "text-emerald-400" : rsiValue <= 40 ? "text-red-500" : "text-gray-400";
+
+            return (
+              <div
+                key={coin.id}
+                onClick={() => handleCoinSwitch(coin.asset)}
+                className={`bg-[#0a0d11] border border-white/40 p-4 rounded-xl flex flex-col gap-3 shadow-lg relative overflow-hidden cursor-pointer ${activeCoin === coin.asset ? 'border-emerald-500' : ''}`}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full ${coin.color} flex justify-center items-center text-white font-bold text-xs`}>
+                      {coin.asset.charAt(0)}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-white text-sm">{coin.asset}</span>
+                      <span className="text-gray-400 text-[10px]">{coin.name}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    {/* LIVE COLUMNS */}
+                    <span className="font-mono font-bold text-white text-sm">${livePrice}</span>
+                    <span className={`font-mono text-[10px] font-bold ${isUp ? "text-emerald-400" : "text-red-400"}`}>
+                      {isUp ? "+" : "-"}{liveChange}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-y-2 border-t border-white/30 pt-3">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] uppercase text-gray-400 font-bold">Volume</span>
+                    <span className="text-gray-300 font-mono text-xs">{liveVol}</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[9px] uppercase text-gray-400 font-bold">M.Cap</span>
+                    <span className="text-gray-300 font-mono text-xs">{coin.mcap}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-bold text-white text-sm">
-                      {coin.asset}
-                    </span>
-                    <span className="text-gray-400 text-[10px]">
-                      {coin.name}
-                    </span>
+                    <span className="text-[9px] uppercase text-gray-400 font-bold">RSI (14)</span>
+                    <span className="text-gray-300 font-mono text-xs">{coin.rsi}</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[9px] uppercase text-gray-400 font-bold">Trend</span>
+                    <span className={`font-bold text-xs ${trendColor}`}>{trendLabel}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end">
-                  <span className="font-mono font-bold text-white text-sm">
-                    ${coin.price}
-                  </span>
-                  <span
-                    className={`font-mono text-[10px] font-bold ${coin.isUp ? "text-emerald-400" : "text-red-400"}`}
-                  >
-                    {coin.change}
-                  </span>
-                </div>
+                <button
+                  onClick={(e) => openTradeModal(e, coin.asset)}
+                  className="w-full bg-emerald-400/10 hover:bg-emerald-500 active:scale-95 text-emerald-400 hover:text-white border border-green-600 py-2 rounded-lg text-xs font-bold transition-all mt-1"
+                >
+                  Trade {coin.asset}
+                </button>
               </div>
-              <div className="grid grid-cols-2 gap-y-2 border-t border-white/30 pt-3">
-                <div className="flex flex-col">
-                  <span className="text-[9px] uppercase text-gray-400 font-bold">
-                    Volume
-                  </span>
-                  <span className="text-gray-300 font-mono text-xs">
-                    {coin.vol}
-                  </span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[9px] uppercase text-gray-400 font-bold">
-                    M.Cap
-                  </span>
-                  <span className="text-gray-300 font-mono text-xs">
-                    {coin.mcap}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] uppercase text-gray-400 font-bold">
-                    RSI (14)
-                  </span>
-                  <span className="text-gray-300 font-mono text-xs">
-                    {coin.rsi}
-                  </span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[9px] uppercase text-gray-400 font-bold">
-                    Trend
-                  </span>
-                  <span
-                    className={`font-bold text-xs ${coin.trend === "Bullish" ? "text-emerald-400" : coin.trend === "Bearish" ? "text-red-400" : "text-gray-400"}`}
-                  >
-                    {coin.trend}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={(e) => openTradeModal(e, coin.asset)}
-                className="w-full bg-emerald-400/10 hover:bg-emerald-500 active:scale-95 text-emerald-400 hover:text-white border border-green-600 py-2 rounded-lg text-xs font-bold transition-all mt-1"
-              >
-                Trade {coin.asset}
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
