@@ -12,28 +12,22 @@ import {
 } from "react-icons/fi";
 import TradeModal from "./TradeModal";
 
-// ════════════════════════════════════════════════════════════
 // 1. TRADE MARKER COMPONENT (Now with accurate P/L Math & Smart Positioning)
-// ════════════════════════════════════════════════════════════
 const TradeMarker = ({ trade, onClose, currentPrice, index }) => {
   const [showDetails, setShowDetails] = useState(false);
 
   // EXACT P/L MATH: (Exit - Entry) * Qty * Leverage
   const profitLoss =
     trade.type === "Buy"
-      ? (currentPrice - trade.targetPrice) * trade.qty * trade.leverage
-      : (trade.targetPrice - currentPrice) * trade.qty * trade.leverage;
+      ? (currentPrice - trade.targetPrice) * trade.qty
+      : (trade.targetPrice - currentPrice) * trade.qty;
 
-  // 🔴 MAGIC CALCULATION (The Hack for Overlap & Movement)
-  // Entry Price aur Live Price ka difference nikal kar UI ko move karenge.
-  // 0.5 is zoom sensitivity. Tu isey 1 ya 2 karke dekh sakta hai agar movement slow lage.
+  // 🔴 MAGIC CALCULATION 
   const verticalOffset = (trade.targetPrice - currentPrice) * 0.5; 
   
-  // Trades ek ke upar ek na aayen, isliye har trade ko right shift karenge (60px per trade)
   const horizontalOffset = `calc(20% + ${index * 60}px)`;
 
   return (
-    // 1. Wrapper ko Y-Axis pe move kiya (Price ke hisaab se upar-neeche hoga)
     <div 
       className="absolute left-0 right-0 z-[60] flex items-center pointer-events-none transition-transform duration-[400ms] ease-out"
       style={{ top: "50%", transform: `translateY(${verticalOffset}px)` }}
@@ -43,7 +37,6 @@ const TradeMarker = ({ trade, onClose, currentPrice, index }) => {
         className={`absolute left-0 right-0 border-t-2 border-dashed ${trade.type === "Buy" ? "border-emerald-500" : "border-red-500"} opacity-60`}
       ></div>
 
-      {/* 2. Marker ko X-Axis pe spread kiya taaki overlap na ho */}
       <div 
         className="absolute flex flex-col items-center pointer-events-auto"
         style={{ left: horizontalOffset }}
@@ -85,30 +78,45 @@ const TradeMarker = ({ trade, onClose, currentPrice, index }) => {
               </button>
             </div>
 
-            <div className="space-y-1.5 text-[11px] text-gray-400 font-mono mb-3">
+           {/* Tooltip ka Data Section */}
+            <div className="space-y-2 text-[11px] text-gray-400 font-mono mb-3">
+              
+              {/* Margin aur Quantity ki separate rows */}
+              <div className="flex justify-between items-center border-b border-white/5 pb-1">
+                <span>Margin:</span> 
+                <span className="text-white font-bold">${trade.investment.toFixed(2)}</span>
+              </div>
+              
+              <div className="flex justify-between items-center border-b border-white/5 pb-1">
+                <span>Quantity:</span> 
+                <span className="text-white font-bold">{trade.qty.toFixed(4)} {trade.asset}</span>
+              </div>
+
+              {/* Entry aur Live Price ki rows */}
               <div className="flex justify-between">
-                <span>Margin:</span>{" "}
-                <span className="text-white">
-                  ${trade.investment.toFixed(2)}
-                </span>
+                <span>Entry:</span> 
+                <span className="text-white">${trade.targetPrice.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Entry Price:</span>{" "}
-                <span className="text-white">
-                  ${trade.targetPrice.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Live Price:</span>{" "}
+                <span>Live:</span> 
                 <span className="text-white">${currentPrice.toFixed(2)}</span>
               </div>
+
+              {/* TP/SL aur P/L */}
+              {trade.tp && (
+                <div className="flex justify-between text-emerald-400">
+                  <span>TP:</span> <span>${trade.tp.toFixed(2)}</span>
+                </div>
+              )}
+              {trade.sl && (
+                <div className="flex justify-between text-red-400">
+                  <span>SL:</span> <span>${trade.sl.toFixed(2)}</span>
+                </div>
+              )}
+              
               <div className="flex justify-between pt-1 border-t border-white/10 mt-1">
-                <span>P/L:</span>
-                <span
-                  className={
-                    profitLoss >= 0 ? "text-emerald-400" : "text-red-400"
-                  }
-                >
+                <span className="text-gray-300">P/L:</span>
+                <span className={profitLoss >= 0 ? "text-emerald-400" : "text-red-400 font-bold"}>
                   {profitLoss >= 0 ? "+" : ""}${profitLoss.toFixed(2)}
                 </span>
               </div>
@@ -197,7 +205,6 @@ const TradingViewChart = memo(({ activeTrades, onCloseTrade, symbol }) => {
       ref={chartWrapperRef}
       className="relative w-full h-[450px] md:h-[600px] border border-white/30 rounded-xl overflow-hidden shadow-2xl bg-[#0a0d11]"
     >
-      // Aise update kar:
           {activeTrades.map((trade, index) => (
             trade.asset === activeCoin && (
               <TradeMarker 
@@ -418,6 +425,7 @@ const Trading = () => {
   const [selectedAsset, setSelectedAsset] = useState("");
   const [modalPrice, setModalPrice] = useState(0);
   const [activeTrades, setActiveTrades] = useState([]);
+  const [pendingOrders, setPendingOrders] = useState([]);
 
   // --- BALANCE TRACKING ---
   const [balance, setBalance] = useState(
@@ -463,48 +471,47 @@ const Trading = () => {
     setModalOpen(true);
   };
 
-  // 🔴 1. OPENING THE POSITION
- const executeTrade = (tradeData) => {
-    const { asset, type, targetPrice, inputValue, inputType, leverage } = tradeData;
+  // 🔴 1. OPENING THE POSITION (Updated with Real Crypto Math)
+     const executeTrade = (tradeData) => {
+    const { asset, type, targetPrice, amount, leverage, tp, sl,orderType } = tradeData;
 
-    let totalPositionValue = 0;
-    let coinQty = 0;
+    // 🔴 EXACT CRYPTO MATH
+    const exactMarginToDeduct = amount; // Jo paisa input kiya, sirf wahi katega
+    const totalPositionValue = amount * leverage; // Paisa * Leverage = Total Power
+    const coinQty = totalPositionValue / targetPrice; // Asli quantity jo mili (Levearged)
 
-    // 1. Calculate Total Position Value (Ensure they are treated as Numbers)
-    if (inputType === "Amount") {
-      totalPositionValue = Number(inputValue); 
-      coinQty = Number(inputValue) / Number(targetPrice);
-    } else {
-      coinQty = Number(inputValue); 
-      totalPositionValue = Number(inputValue) * Number(targetPrice);
-    }
-
-    // 2. Apply Leverage to get EXACT Margin
-    const exactMarginToDeduct = totalPositionValue / Number(leverage);
-
-    // 3. Balance Check
+    // Balance Check
     if (balance < exactMarginToDeduct) {
-      alert(`Transaction Failed: Insufficient Balance! You need $${exactMarginToDeduct.toFixed(2)} USDT for this ${leverage}x trade.`);
+      alert(`Transaction Failed: Insufficient Balance! You need $${exactMarginToDeduct.toFixed(2)} USDT for this trade.`);
       return;
     }
 
-    // 4. Update Balance (Deduct EXACT Margin)
+    // Update Balance (Deduct EXACT Margin)
     setBalance((prev) => prev - exactMarginToDeduct);
 
-    // 5. Save the Trade to Chart
-    const newTrade = { 
+    // Save Trade to Chart (Now includes TP and SL)
+   const newTrade = { 
       ...tradeData, 
       id: Date.now(),
-      investment: exactMarginToDeduct, // Exact paisa jo balance se kata
+      investment: exactMarginToDeduct, 
       qty: coinQty,
-      leverage: Number(leverage)
+      leverage: leverage,
+      tp: tp, 
+      sl: sl 
     };
     
-    setActiveTrades((prev) => [...prev, newTrade]);
-    setModalOpen(false);
-    
-    // Success Alert
-    alert(`Trade Success: ${type} ${coinQty.toFixed(4)} ${asset} at ${leverage}x\nMargin Used: $${exactMarginToDeduct.toFixed(2)}`);
+    // 🔴 LIMIT vs MARKET LOGIC
+    if (orderType === 'Limit') {
+      // Limit order ko Pending mein dalo
+      setPendingOrders((prev) => [...prev, newTrade]);
+      setModalOpen(false);
+      alert(`Limit Order Placed: ${type} ${asset} at $${targetPrice}\nMargin Locked: $${exactMarginToDeduct.toFixed(2)}\n(Will execute when price hits target)`);
+    } else {
+      // Market order ko directly Active mein dalo
+      setActiveTrades((prev) => [...prev, newTrade]);
+      setModalOpen(false);
+      alert(`Trade Success: ${type} ${coinQty.toFixed(4)} ${asset} at ${leverage}x\nMargin Deducted: $${exactMarginToDeduct.toFixed(2)}\nTP: ${tp || 'None'} | SL: ${sl || 'None'}`);
+    }
   };
 
 
@@ -516,15 +523,9 @@ const Trading = () => {
     // Calculate P/L
     let profitLoss = 0;
     if (tradeToClose.type === "Buy") {
-      profitLoss =
-        (exitPrice - tradeToClose.targetPrice) *
-        tradeToClose.qty *
-        tradeToClose.leverage;
+      profitLoss = (exitPrice - tradeToClose.targetPrice) * tradeToClose.qty; 
     } else {
-      profitLoss =
-        (tradeToClose.targetPrice - exitPrice) *
-        tradeToClose.qty *
-        tradeToClose.leverage;
+      profitLoss = (tradeToClose.targetPrice - exitPrice) * tradeToClose.qty; 
     }
 
     // Add Initial Investment + P/L back to balance
@@ -539,6 +540,46 @@ const Trading = () => {
       `Position Closed: ${tradeToClose.asset}\nNet P/L: ${profitLoss >= 0 ? "+" : ""}$${profitLoss.toFixed(2)}\nReturned to Balance: $${totalReturn.toFixed(2)}`,
     );
   };
+
+  // 🔴 THE WATCHDOG: AUTO-CLOSE (TP/SL) & AUTO-FILL (Limit Orders)
+  useEffect(() => {
+    // 1. ACTIVE TRADES KO SCAN KARO (For TP / SL)
+    activeTrades.forEach((trade) => {
+      const ticker = liveTickers[`${trade.asset}USDT`];
+      if (!ticker) return;
+      const currentLivePrice = parseFloat(ticker.c);
+
+      let shouldClose = false;
+      if (trade.type === "Buy") {
+        if ((trade.tp && currentLivePrice >= trade.tp) || (trade.sl && currentLivePrice <= trade.sl)) shouldClose = true;
+      } else if (trade.type === "Sell") {
+        if ((trade.tp && currentLivePrice <= trade.tp) || (trade.sl && currentLivePrice >= trade.sl)) shouldClose = true;
+      }
+
+      if (shouldClose) {
+        handleClosePosition(trade.id, currentLivePrice);
+        setTimeout(() => alert(`🔔 AUTO-CLOSED: ${trade.asset} position closed at $${currentLivePrice} (TP/SL Hit)`), 300);
+      }
+    });
+
+    // 2. PENDING LIMIT ORDERS KO SCAN KARO
+    pendingOrders.forEach((order) => {
+      const ticker = liveTickers[`${order.asset}USDT`];
+      if (!ticker) return;
+      const currentLivePrice = parseFloat(ticker.c);
+
+      let shouldExecute = false;
+      if (order.type === "Buy" && currentLivePrice <= order.targetPrice) shouldExecute = true;
+      if (order.type === "Sell" && currentLivePrice >= order.targetPrice) shouldExecute = true;
+
+      if (shouldExecute) {
+        // Pending se nikal kar Active Trades mein daalo
+        setPendingOrders((prev) => prev.filter((o) => o.id !== order.id));
+        setActiveTrades((prev) => [...prev, { ...order, targetPrice: order.targetPrice }]);
+        setTimeout(() => alert(`✅ LIMIT EXECUTED: ${order.type} ${order.asset} at $${order.targetPrice}`), 300);
+      }
+    });
+  }, [liveTickers, activeTrades, pendingOrders]);
 
   return (
     <div
