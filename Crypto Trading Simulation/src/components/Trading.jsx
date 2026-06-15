@@ -9,6 +9,7 @@ import {
   FiArrowDown,
   FiMaximize,
   FiX,
+  FiStar
 } from "react-icons/fi";
 import TradeModal from "./TradeModal";
 
@@ -424,13 +425,36 @@ const Trading = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState("");
   const [modalPrice, setModalPrice] = useState(0);
-  const [activeTrades, setActiveTrades] = useState([]);
-  const [pendingOrders, setPendingOrders] = useState([]);
+  const [activeTrades, setActiveTrades] = useState(() => {
+    const saved = localStorage.getItem("activeTrades");
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [pendingOrders, setPendingOrders] = useState(() => {
+    const saved = localStorage.getItem("pendingOrders");
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // --- BALANCE TRACKING ---
   const [balance, setBalance] = useState(
     () => parseFloat(localStorage.getItem("balance")) || 10000,
   );
+
+  //ADD TO WISHLIST FUNCTIONALITY (LocalStorage + State Sync)
+  const [wishlist, setWishlist] = useState(() => JSON.parse(localStorage.getItem("wishlist")) || []);
+
+  const toggleWishlist = (e, asset) => {
+    e.stopPropagation(); // Chart switch hone se rokne ke liye
+    let updated;
+    if (wishlist.includes(asset)) {
+      updated = wishlist.filter((item) => item !== asset);
+    } else {
+      updated = [...wishlist, asset];
+    }
+    setWishlist(updated);
+    localStorage.setItem("wishlist", JSON.stringify(updated));
+    window.dispatchEvent(new Event("storage")); // Updates Wishlist page instantly
+  };
 
   const liveData = useCryptoSocket(activeCoin);
   const [liveTickers, setLiveTickers] = useState({});
@@ -446,6 +470,12 @@ const Trading = () => {
     localStorage.setItem("balance", balance);
     window.dispatchEvent(new Event("storage"));
   }, [balance]);
+
+  // Auto-save Trades and Orders to LocalStorage
+  useEffect(() => {
+    localStorage.setItem("activeTrades", JSON.stringify(activeTrades));
+    localStorage.setItem("pendingOrders", JSON.stringify(pendingOrders));
+  }, [activeTrades, pendingOrders]);
 
   const handleCoinSwitch = (asset) => {
     setCurrentSymbol("BINANCE:" + asset + "USDT");
@@ -515,7 +545,7 @@ const Trading = () => {
   };
 
 
-  // 🟢 2. CLOSING THE POSITION (Calculating P/L)
+  // 🟢 2. CLOSING THE POSITION (Calculating P/L & Triggering History Refresh)
   const handleClosePosition = (tradeId, exitPrice) => {
     const tradeToClose = activeTrades.find((t) => t.id === tradeId);
     if (!tradeToClose) return;
@@ -530,11 +560,18 @@ const Trading = () => {
 
     // Add Initial Investment + P/L back to balance
     const totalReturn = tradeToClose.investment + profitLoss;
-
     setBalance((prev) => prev + totalReturn);
 
-    // Remove the trade from Chart
+    // Remove the trade from Chart (Active Trades)
     setActiveTrades((prev) => prev.filter((t) => t.id !== tradeId));
+
+    // 🔴 NAYA: Save to Closed Trades History
+    const closedTradesHistory = JSON.parse(localStorage.getItem("closedTrades")) || [];
+    const closedTradeRecord = { ...tradeToClose, exitPrice, pnl: profitLoss, status: "Closed", closeTime: Date.now() };
+    localStorage.setItem("closedTrades", JSON.stringify([closedTradeRecord, ...closedTradesHistory]));
+
+    // 🔴 NAYA: History page ko refresh karne ka Signal
+    window.dispatchEvent(new Event("tradesUpdated"));
 
     alert(
       `Position Closed: ${tradeToClose.asset}\nNet P/L: ${profitLoss >= 0 ? "+" : ""}$${profitLoss.toFixed(2)}\nReturned to Balance: $${totalReturn.toFixed(2)}`,
@@ -669,10 +706,12 @@ const Trading = () => {
                         <div className={`w-8 h-8 rounded-full ${coin.color} flex justify-center items-center text-white font-bold text-[10px] shadow-lg`}>
                           {coin.asset.charAt(0)}
                         </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-white leading-tight">{coin.asset}</span>
-                          <span className="text-gray-500 text-[10px]">{coin.name}</span>
-                        </div>
+                       <div className="flex items-center gap-2">
+                      <span className="font-bold text-white leading-tight">{coin.asset}</span>
+                      <button onClick={(e) => toggleWishlist(e, coin.asset)} className="text-gray-400 hover:text-yellow-400 transition-colors">
+                        <FiStar size={14} fill={wishlist.includes(coin.asset) ? "gold" : "none"} color={wishlist.includes(coin.asset) ? "gold" : "currentColor"} />
+                      </button>
+                    </div>
                       </div>
                     </td>
                     
@@ -739,7 +778,10 @@ const Trading = () => {
                       <span className="text-gray-400 text-[10px]">{coin.name}</span>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end">
+                 <div className="flex flex-col items-end gap-1">
+    <button onClick={(e) => toggleWishlist(e, coin.asset)} className="text-gray-400 mb-1">
+      <FiStar size={14} fill={wishlist.includes(coin.asset) ? "gold" : "none"} color={wishlist.includes(coin.asset) ? "gold" : "currentColor"} />
+    </button>
                     {/* LIVE COLUMNS */}
                     <span className="font-mono font-bold text-white text-sm">${livePrice}</span>
                     <span className={`font-mono text-[10px] font-bold ${isUp ? "text-emerald-400" : "text-red-400"}`}>
