@@ -197,7 +197,7 @@ const MarketSnapshot = () => {
   const [liveTickers, setLiveTickers] = useState({});
 
   useEffect(() => {
-    const socket = io("http://localhost:5000");
+    const socket = io(`http://${window.location.hostname}:5000`);
     socket.on("all_tickers", (data) => setLiveTickers(data));
     return () => socket.disconnect();
   }, []);
