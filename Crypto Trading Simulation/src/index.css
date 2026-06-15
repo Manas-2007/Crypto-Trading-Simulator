@@ -9,3 +9,25 @@
     height: 100vh !important;
   }
 }
+
+/* 🔴 GLOBAL LIGHT MODE MAGIC HACK */
+body.light-mode {
+  /* Ye dark ko light karega, aur hue-rotate colors ko wapas apni jagah layega */
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #05070a; /* Base dark rakhna zaroori hai taaki wo invert hoke white bane */
+  min-height: 100vh;
+}
+
+/* Optional: Agar koi Images use kar raha hai toh unhe double invert kardo taaki wo bhoot na lagein */
+body.light-mode img,
+body.light-mode video {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Fix for custom scrollbars in light mode */
+body.light-mode ::-webkit-scrollbar-track {
+  background: #e0e0e0 !important;
+}
+body.light-mode ::-webkit-scrollbar-thumb {
+  background: #a0a0a0 !important;
+}

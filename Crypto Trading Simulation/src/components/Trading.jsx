@@ -698,7 +698,7 @@ const Trading = () => {
                   <tr
                     key={coin.id}
                     onClick={() => handleCoinSwitch(coin.asset)}
-                    className={`border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer ${activeCoin === coin.asset ? 'bg-white/5 border-l-2 border-l-emerald-500' : ''}`}
+                    className={`border-b border-white/20 hover:bg-white/10 transition-colors group cursor-pointer ${activeCoin === coin.asset ? 'bg-white/5 border-l-2 border-l-emerald-500' : ''}`}
                   >
                     <td className="py-4 pl-2 text-gray-300 font-mono text-xs">#{coin.rank}</td>
                     <td className="py-4">
@@ -716,7 +716,7 @@ const Trading = () => {
                     </td>
                     
                     {/* LIVE COLUMNS */}
-                    <td className="py-4 text-right text-white font-mono font-bold">${livePrice}</td>
+                    <td className="py-4 text-right text-white font-mono font-[500]">${livePrice}</td>
                     <td className={`py-4 text-right font-mono font-bold text-xs ${isUp ? "text-emerald-400" : "text-red-500"}`}>
                       <div className="flex items-center justify-end gap-1">
                         {isUp ? <FiTrendingUp size={12} /> : <FiTrendingDown size={12} />}

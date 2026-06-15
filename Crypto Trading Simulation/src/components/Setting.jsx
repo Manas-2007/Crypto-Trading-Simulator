@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";import {
+import React, { useState, useRef, useEffect } from "react";
+import {
   FiMonitor,
   FiDollarSign,
   FiClock,
@@ -11,7 +12,7 @@ import React, { useState, useRef, useEffect } from "react";import {
   FiSave,
 } from "react-icons/fi";
 
-// 1. REUSABLE UI COMPONENTS
+// 1. REUSABLE UI COMPONENTS (UNCHANGED)
 const ToggleSwitch = ({ enabled, onChange }) => (
   <button
     onClick={onChange}
@@ -23,12 +24,10 @@ const ToggleSwitch = ({ enabled, onChange }) => (
   </button>
 );
 
-// Custom Select Dropdown
 const SelectDropdown = ({ value, options, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Bahar click karne par dropdown close karne ka logic
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -43,7 +42,6 @@ const SelectDropdown = ({ value, options, onChange }) => {
 
   return (
     <div className="relative w-32 md:w-40 shrink-0" ref={dropdownRef}>
-      {/* Clickable Area (Triggers Dropdown) */}
       <div
         onClick={() => setIsOpen(!isOpen)}
         className="w-full bg-[#131722] border border-white/30 hover:border-emerald-500 text-white text-[11px] md:text-xs rounded-lg px-3 py-2 cursor-pointer flex justify-between items-center transition-colors shadow-sm"
@@ -57,7 +55,6 @@ const SelectDropdown = ({ value, options, onChange }) => {
         </span>
       </div>
 
-      {/* The Custom Dropdown Menu (Z-index 50 taaki card ke upar dikhe) */}
       {isOpen && (
         <div className="absolute top-full left-0 mt-1.5 w-full bg-[#131722] border border-white/20 rounded-lg shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           {options.map((opt) => (
@@ -84,25 +81,92 @@ const SelectDropdown = ({ value, options, onChange }) => {
 
 // 2. MAIN SETTINGS COMPONENT
 const Settings = () => {
+  // 🔴 STATES (Loaded from LocalStorage or defaults)
   const [theme, setTheme] = useState("dark");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("INR");
   const [timeframe, setTimeframe] = useState("1D");
   const [chartType, setChartType] = useState("Candles");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [alertsEnabled, setAlertsEnabled] = useState(true);
   const [confirmTrades, setConfirmTrades] = useState(true);
 
+  // 🔴 LOAD SAVED SETTINGS ON MOUNT
+  useEffect(() => {
+    const prefs = JSON.parse(localStorage.getItem("userPreferences")) || {};
+    setTheme(prefs.theme || "dark");
+    setCurrency(prefs.currency || "INR");
+    setTimeframe(prefs.timeframe || "1D");
+    setChartType(prefs.chartType || "Candles");
+    setSoundEnabled(prefs.soundEnabled !== false); // default true
+    setAlertsEnabled(prefs.alertsEnabled !== false); 
+    setConfirmTrades(prefs.confirmTrades !== false);
+  }, []);
+
+  // 🔴 SAVE PREFERENCES
   const handleSave = () => {
+    const prefs = { theme, currency, timeframe, chartType, soundEnabled, alertsEnabled, confirmTrades };
+    localStorage.setItem("userPreferences", JSON.stringify(prefs));
+    
+    // Theme Application Logic (Adds class to body)
+    if (theme === "light") {
+      document.body.classList.add("light-mode");
+    } else {
+      document.body.classList.remove("light-mode");
+    }
+    
     alert("Settings Saved Successfully!");
   };
 
+  // 🔴 THE NUCLEAR BUTTON: Wipe All Data
   const handleReset = () => {
     const isConfirmed = window.confirm(
-      "WARNING: Are you sure you want to delete all your simulated trade history and reset account balance? This cannot be undone.",
+      "WARNING: Are you sure you want to delete all your simulated trade history, active orders, and reset account balance? This cannot be undone."
     );
     if (isConfirmed) {
-      alert("All data has been reset.");
+      // 1. Wipe all trading storage keys
+      localStorage.removeItem("activeTrades");
+      localStorage.removeItem("pendingOrders");
+      localStorage.removeItem("closedTrades");
+      localStorage.removeItem("wishlist");
+      localStorage.removeItem("activeCoin");
+      
+      // 2. Reset Balance to default
+      localStorage.setItem("balance", 10000); 
+      
+      // 3. Dispatch events to instantly update all other tabs
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("tradesUpdated"));
+      
+      alert("All trading data has been completely wiped and reset!");
     }
+  };
+
+  // 🔴 BONUS: Working CSV Export for Trade History!
+  const handleExportCSV = () => {
+    const closedTrades = JSON.parse(localStorage.getItem("closedTrades")) || [];
+    if (closedTrades.length === 0) {
+      alert("You have no closed trades to export yet.");
+      return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    // CSV Headers
+    csvContent += "Trade ID,Asset,Type,Entry Price,Exit Price,Quantity,Net P/L,Status\n";
+
+    // Format rows
+    closedTrades.forEach(t => {
+      const row = `${t.id},${t.asset},${t.type},${t.targetPrice},${t.exitPrice || 'N/A'},${t.qty},${t.pnl},${t.status}`;
+      csvContent += row + "\n";
+    });
+
+    // Trigger Download
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "My_Trade_History.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -162,7 +226,7 @@ const Settings = () => {
             />
           </div>
 
-          {/* Currency */}
+          {/* Currency (INR Focused) */}
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/5 rounded-lg text-gray-400">
@@ -181,10 +245,8 @@ const Settings = () => {
               value={currency}
               onChange={setCurrency}
               options={[
-                { label: "USD ($)", value: "USD" },
-                { label: "EUR (€)", value: "EUR" },
                 { label: "INR (₹)", value: "INR" },
-                { label: "GBP (£)", value: "GBP" },
+                { label: "USD ($)", value: "USD" },
               ]}
             />
           </div>
@@ -332,12 +394,15 @@ const Settings = () => {
               </p>
             </div>
             <div className="flex gap-3 w-full md:w-auto">
+              {/* Export CSV Button Hooked Up */}
               <button
+                onClick={handleExportCSV}
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/30 px-4 py-2.5 rounded-lg text-xs font-bold transition-all"
                 title="Export Data"
               >
                 <FiDownload size={14} /> Export CSV
               </button>
+              {/* Reset Data Button Hooked Up */}
               <button
                 onClick={handleReset}
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/30 hover:border-red-600 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow-sm"

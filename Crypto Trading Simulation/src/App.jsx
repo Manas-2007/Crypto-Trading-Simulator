@@ -33,6 +33,25 @@ const TiltHelper = ({ show, onClose }) => {
 function App() {
   const [showTiltMessage, setShowTiltMessage] = useState(true);
 
+  // 🔴 GLOBAL THEME PERSISTENCE LOGIC
+  useEffect(() => {
+    const applyTheme = () => {
+      const prefs = JSON.parse(localStorage.getItem("userPreferences")) || {};
+      if (prefs.theme === "light") {
+        document.body.classList.add("light-mode");
+      } else {
+        document.body.classList.remove("light-mode");
+      }
+    };
+
+    // App load hote hi theme apply karo
+    applyTheme();
+
+    // Jab settings save hon (storage event trigger ho), toh theme update karo
+    window.addEventListener("storage", applyTheme);
+    return () => window.removeEventListener("storage", applyTheme);
+  }, []);
+
   return (
     <Router>
       <LayoutWrapper showTiltMessage={showTiltMessage} setShowTiltMessage={setShowTiltMessage} />

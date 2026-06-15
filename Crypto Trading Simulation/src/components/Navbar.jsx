@@ -64,7 +64,6 @@ const Navbar = () => {
     localStorage.setItem('balance', 10000); 
     setBalance(10000); 
     setIsDropdownOpen(false);
-    // Trading component ko bhi batane ke liye event dispatch karo
     window.dispatchEvent(new Event('storage'));
   };
 
@@ -130,7 +129,7 @@ const Navbar = () => {
               <span className="text-gray-200 text-[9px] font-bold uppercase tracking-widest leading-none mb-0.5">
                 Demo Account
               </span>
-              <span className="text-white font-mono font-bold text-sm leading-none">
+              <span className="text-white font-mono font-[400] text-sm leading-none">
                 {'$' + balance.toLocaleString(undefined, {minimumFractionDigits: 2})}
               </span>
             </div>
