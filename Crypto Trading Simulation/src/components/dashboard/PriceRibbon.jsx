@@ -1,17 +1,40 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import io from "socket.io-client";
 import { FiArrowUpRight, FiArrowDownRight } from "react-icons/fi";
 
-const tickerData = [
-  { name: "BTC", price: "45,581.50", change: "+2.4%", isUp: true },
-  { name: "ETH", price: "3,125.80", change: "-1.2%", isUp: false },
-  { name: "SOL", price: "181.85", change: "+5.1%", isUp: true },
-  { name: "BNB", price: "590.20", change: "+0.8%", isUp: true },
-  { name: "XRP", price: "0.5201", change: "-2.3%", isUp: false },
-  { name: "ADA", price: "0.455", change: "+1.9%", isUp: true },
-  { name: "DOGE", price: "0.151", change: "+4.2%", isUp: true },
-];
+// Hum base coins define kar rahe hain jo ribbon mein ghumenge
+const baseCoins = ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "AVAX", "DOT", "MATIC"];
 
 const PriceRibbon = () => {
+  const [liveTickers, setLiveTickers] = useState({});
+
+  // 🔴 1. Connect to Live WebSocket Feed
+  useEffect(() => {
+    const socket = io("http://localhost:5000");
+    socket.on("all_tickers", (data) => setLiveTickers(data));
+    return () => socket.disconnect();
+  }, []);
+
+  // 🔴 2. Format Live Data for the Ribbon
+  const dynamicTickerData = baseCoins.map((coin) => {
+    const ticker = liveTickers[`${coin}USDT`];
+    
+    // Fallback if data is still loading
+    const currentPrice = ticker ? parseFloat(ticker.c) : 0;
+    const priceFormatted = currentPrice ? currentPrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : "---";
+    
+    const changeRaw = ticker ? parseFloat(ticker.P) : 0;
+    const isUp = changeRaw >= 0;
+    const changeFormatted = ticker ? `${isUp ? "+" : ""}${changeRaw.toFixed(2)}%` : "0.00%";
+
+    return {
+      name: coin,
+      price: priceFormatted,
+      change: changeFormatted,
+      isUp: isUp,
+    };
+  });
+
   return (
     <div className="mx-2 md:mx-4 overflow-hidden bg-[#0d1015] border border-white/30 shadow-[inset_0_0_15px_rgba(0,0,0,0.4)] rounded-xl">
       <style>{`
@@ -31,8 +54,10 @@ const PriceRibbon = () => {
         }
       `}</style>
 
+      {/* 🔴 3. Render using dynamic data */}
       <div className="animate-marquee-premium">
-        {[...tickerData, ...tickerData].map((item, index) => (
+        {/* Array ko double kiya taaki infinite loop smooth lage */}
+        {[...dynamicTickerData, ...dynamicTickerData].map((item, index) => (
           <div
             key={index}
             className="flex items-center gap-2 md:gap-3 px-3 py-2 md:px-6 md:py-3 border-r border-white/30 hover:bg-white/5 transition-colors duration-300 shrink-0"
@@ -49,6 +74,7 @@ const PriceRibbon = () => {
               ${item.price}
             </span>
 
+            {/* Change Badge */}
             <div
               className={`flex items-center gap-0.5 md:gap-1 font-bold px-1.5 py-0.5 md:px-2 rounded text-[9px] md:text-xs ${
                 item.isUp

@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import io from "socket.io-client";
 import {
-  FiTrendingUp,
-  FiTrendingDown,
   FiArrowUpRight,
   FiArrowDownRight,
 } from "react-icons/fi";
@@ -60,44 +59,23 @@ const styles = `
   }
 `;
 
-const cryptoData = [
-  {
-    id: 1,
-    name: "BTC-USD",
-    desc: "Bitcoin",
-    price: "$45,581",
-    change: "-10.05%",
-    isPositive: true,
-    vol: "2.4B",
-  },
-  {
-    id: 2,
-    name: "ETH-USD",
-    desc: "Ethereum",
-    price: "$3,125",
-    change: "+7.85%",
-    isPositive: true,
-    vol: "1.1B",
-  },
-  {
-    id: 3,
-    name: "SOL-USD",
-    desc: "Solana",
-    price: "$181.85",
-    change: "+4.76%",
-    isPositive: false,
-    vol: "540M",
-  },
-  {
-    id: 4,
-    name: "BSD-USD",
-    desc: "USD Coin",
-    price: "$821.85",
-    change: "+1.50%",
-    isPositive: true,
-    vol: "890M",
-  },
+// Base configuration for the 4 dashboard cards
+const baseCoins = [
+  { id: 1, symbol: "BTCUSDT", name: "BTC-USD", desc: "Bitcoin" },
+  { id: 2, symbol: "ETHUSDT", name: "ETH-USD", desc: "Ethereum" },
+  { id: 3, symbol: "SOLUSDT", name: "SOL-USD", desc: "Solana" },
+  { id: 4, symbol: "BNBUSDT", name: "BNB-USD", desc: "Binance Coin" },
 ];
+
+// Utility to format large volumes
+const formatVolume = (vol) => {
+  if (!vol) return "0";
+  const num = parseFloat(vol);
+  if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
+  if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
+  if (num >= 1e3) return (num / 1e3).toFixed(2) + "K";
+  return num.toFixed(2);
+};
 
 /* ─── Sparkline paths ─── */
 const PATHS = {
@@ -122,7 +100,6 @@ const Sparkline = ({ isPositive }) => {
       preserveAspectRatio="none"
       style={{ width: "100%", height: "100%", display: "block" }}
     >
-      {/* Area fill */}
       <path d={path.fill} fill={fillCol} />
       <path
         className="sparkline-path"
@@ -156,7 +133,6 @@ const CoinCard = ({ coin }) => {
       className={`card-coin relative rounded-xl md:rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5 cursor-pointer p-3 md:p-4 ${isPos ? "card-pos" : "card-neg"}`}
       style={{ fontFamily: "DM Sans, sans-serif" }}
     >
-      {/* Top row: icon + name + badge */}
       <div className="flex items-center justify-between mb-2 md:mb-3">
         <div className="flex items-center gap-1.5 md:gap-2.5">
           <div
@@ -200,12 +176,10 @@ const CoinCard = ({ coin }) => {
         </div>
       </div>
 
-      {/* Sparkline — Responsive height */}
       <div className="h-6 md:h-10 mb-2 md:mb-2.5">
         <Sparkline isPositive={isPos} />
       </div>
 
-      {/* Bottom row: price + vol */}
       <div className="flex items-end justify-between">
         <p className="price-mono text-white font-medium leading-none text-xs md:text-base tracking-tight">
           {coin.price}
@@ -219,35 +193,72 @@ const CoinCard = ({ coin }) => {
 };
 
 /* ─── MarketSnapshot ─── */
-const MarketSnapshot = () => (
-  <>
-    <style>{styles}</style>
-    <div
-      className="px-3 sm:px-5 lg:px-7 pt-3 sm:pt-5 lg:pt-0 pb-3 sm:pb-5 lg:pb-7 space-y-3 sm:space-y-4 md:space-y-4 "
-      style={{ fontFamily: "DM Sans, sans-serif" }}
-    >
-      <div className="flex items-center justify-between">
-        <p
-          className="text-gray-400 uppercase text-[9px] md:text-[10px] tracking-widest"
-          style={{ fontFamily: "DM Mono, monospace" }}
-        >
-          Market Snapshot
-        </p>
-        <p
-          className="text-gray-400 text-[9px] md:text-[10px]"
-          style={{ fontFamily: "DM Mono, monospace" }}
-        >
-          Updated just now
-        </p>
-      </div>
+const MarketSnapshot = () => {
+  const [liveTickers, setLiveTickers] = useState({});
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4">
-        {cryptoData.map((coin, i) => (
-          <CoinCard key={coin.id} coin={coin} idx={i} />
-        ))}
+  useEffect(() => {
+    const socket = io("http://localhost:5000");
+    socket.on("all_tickers", (data) => setLiveTickers(data));
+    return () => socket.disconnect();
+  }, []);
+
+  // Map the static base structure with Live WebSocket Data
+  const dynamicCryptoData = baseCoins.map((coin) => {
+    const ticker = liveTickers[coin.symbol];
+    
+    // Fallback if socket hasn't loaded yet
+    const currentPrice = ticker ? parseFloat(ticker.c) : 0;
+    const priceFormatted = currentPrice ? `$${currentPrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}` : "Loading...";
+    
+    const changeRaw = ticker ? parseFloat(ticker.P) : 0;
+    const isPositive = changeRaw >= 0;
+    const changeFormatted = ticker ? `${isPositive ? "+" : ""}${changeRaw.toFixed(2)}%` : "0.00%";
+    
+    // We use quote volume (q) for USDT volume formatting
+    const volFormatted = ticker ? formatVolume(ticker.q) : "0";
+
+    return {
+      ...coin,
+      price: priceFormatted,
+      change: changeFormatted,
+      isPositive: isPositive,
+      vol: volFormatted,
+    };
+  });
+
+  return (
+    <>
+      <style>{styles}</style>
+      <div
+        className="px-3 sm:px-5 lg:px-7 pt-3 sm:pt-5 lg:pt-0 pb-3 sm:pb-5 lg:pb-7 space-y-3 sm:space-y-4 md:space-y-4 "
+        style={{ fontFamily: "DM Sans, sans-serif" }}
+      >
+        <div className="flex items-center justify-between">
+          <p
+            className="text-gray-400 uppercase text-[9px] md:text-[10px] tracking-widest"
+            style={{ fontFamily: "DM Mono, monospace" }}
+          >
+            Market Snapshot
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]"></span>
+            <p
+              className="text-emerald-400 text-[9px] md:text-[10px]"
+              style={{ fontFamily: "DM Mono, monospace" }}
+            >
+              Live Feed Connected
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4">
+          {dynamicCryptoData.map((coin, i) => (
+            <CoinCard key={coin.id} coin={coin} idx={i} />
+          ))}
+        </div>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
+};
 
 export default MarketSnapshot;

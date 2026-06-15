@@ -1,62 +1,79 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import io from "socket.io-client";
 import { FiTrendingUp, FiActivity, FiStar } from "react-icons/fi";
 
-const cryptoAssets = [
-  {
-    id: 1,
-    symbol: "BTC",
-    name: "Bitcoin",
-    price: "59,498.80",
-    vol: "36.17 B",
-    change: "+1.11%",
-    isUp: true,
-    color: "bg-[#F7931A]",
-  },
-  {
-    id: 2,
-    symbol: "ETH",
-    name: "Ethereum",
-    price: "3,125.58",
-    vol: "21.66 B",
-    change: "+3.74%",
-    isUp: true,
-    color: "bg-[#627EEA]",
-  },
-  {
-    id: 3,
-    symbol: "XRP",
-    name: "XRP",
-    price: "0.5201",
-    vol: "5.96 B",
-    change: "+0.07%",
-    isUp: true,
-    color: "bg-[#23292F]",
-  },
-  {
-    id: 4,
-    symbol: "USDT",
-    name: "Tether USDt",
-    price: "0.9996",
-    vol: "100.88 B",
-    change: "-0.06%",
-    isUp: false,
-    color: "bg-[#26A17B]",
-  },
-  {
-    id: 5,
-    symbol: "DOGE",
-    name: "Dogecoin",
-    price: "0.1560",
-    vol: "5.68 B",
-    change: "+13.63%",
-    isUp: true,
-    color: "bg-[#C2A633]",
-  },
+const baseAssets = [
+  { symbol: "BTC", name: "Bitcoin", color: "bg-[#F7931A]" },
+  { symbol: "ETH", name: "Ethereum", color: "bg-[#627EEA]" },
+  { symbol: "SOL", name: "Solana", color: "bg-[#14F195]" },
+  { symbol: "BNB", name: "Binance Coin", color: "bg-[#F3BA2F]" },
+  { symbol: "XRP", name: "XRP", color: "bg-[#23292F]" },
 ];
+
+const formatVolume = (vol) => {
+  if (!vol) return "0.00";
+  const num = parseFloat(vol);
+  if (num >= 1e9) return (num / 1e9).toFixed(2) + " B";
+  if (num >= 1e6) return (num / 1e6).toFixed(2) + " M";
+  return num.toFixed(2);
+};
 
 const DashCoins = () => {
   const [activeTab, setActiveTab] = useState("All Assets");
   const tabs = ["All Assets", "Tradable", "Losers", "Gainers"];
+  
+  const [liveTickers, setLiveTickers] = useState({});
+
+  // 🔴 1. Connect to Binance Live Feed
+  useEffect(() => {
+    const socket = io("http://localhost:5000");
+    socket.on("all_tickers", (data) => setLiveTickers(data));
+    return () => socket.disconnect();
+  }, []);
+
+  // 🔴 2. Dynamic Data Formatting
+  const dynamicAssets = baseAssets.map((coin) => {
+    const ticker = liveTickers[`${coin.symbol}USDT`];
+    
+    // Live Price formatting
+    const currentPrice = ticker ? parseFloat(ticker.c) : 0;
+    const priceFormatted = currentPrice 
+      ? currentPrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 }) 
+      : "Loading...";
+    
+    // Change formatting
+    const changeRaw = ticker ? parseFloat(ticker.P) : 0;
+    const isUp = changeRaw >= 0;
+    const changeFormatted = ticker ? `${isUp ? "+" : ""}${changeRaw.toFixed(2)}%` : "0.00%";
+    
+    // Volume formatting (using Quote Volume 'q' for USDT value)
+    const volFormatted = ticker ? formatVolume(ticker.q) : "0.00";
+
+    return {
+      ...coin,
+      price: priceFormatted,
+      vol: volFormatted,
+      changeRaw: changeRaw,
+      change: changeFormatted,
+      isUp: isUp,
+    };
+  });
+
+  // 🔴 3. Filter Logic based on Active Tab
+  const filteredAssets = dynamicAssets.filter((coin) => {
+    if (activeTab === "Gainers") return coin.changeRaw > 0;
+    if (activeTab === "Losers") return coin.changeRaw < 0;
+    if (activeTab === "Tradable") return coin.symbol !== "USDT"; // Assuming stablecoins aren't standard trading targets
+    return true; // "All Assets"
+  });
+
+  // 🔴 4. Trade Button Action (Point to Trade Simulator)
+  const handleTradeClick = (symbol) => {
+    localStorage.setItem("activeCoin", symbol);
+    window.dispatchEvent(new Event("coinChanged"));
+    // Redirecting to the trading page (change to "/trade-simulator" if your routing is different)
+    window.location.href = "/trade-simulator"; 
+  };
 
   return (
     <div className="mx-2 md:mx-4 my-6 md:my-8 flex flex-col lg:flex-row gap-4 md:gap-6 mb-8">
@@ -97,55 +114,66 @@ const DashCoins = () => {
               </tr>
             </thead>
             <tbody>
-              {cryptoAssets.map((coin) => (
-                <tr
-                  key={coin.id}
-                  className="border-b border-[#1a202c]/50 hover:bg-[#131722] transition-colors group"
-                >
-                  {/* Asset Column */}
-                  <td className="py-2.5 md:py-3.5 pl-2">
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <div
-                        className={`w-6 h-6 md:w-8 md:h-8 rounded-full ${coin.color} flex justify-center items-center text-white font-bold text-[8px] md:text-[10px] shadow-lg shrink-0`}
-                      >
-                        {coin.symbol.charAt(0)}
-                      </div>
-                      <div>
-                        <span className="text-white font-bold text-[11px] md:text-sm tracking-wide block leading-tight">
-                          {coin.symbol}
-                        </span>
-                        <span className="text-gray-500 text-[9px] md:text-[10px]">
-                          {coin.name}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Price */}
-                  <td className="py-2.5 md:py-3.5 text-right text-white font-mono text-[11px] md:text-sm">
-                    ${coin.price}
-                  </td>
-
-                  {/* Volume */}
-                  <td className="py-2.5 md:py-3.5 text-right text-gray-400 font-mono text-[9px] md:text-xs">
-                    {coin.vol}
-                  </td>
-
-                  {/* Change */}
-                  <td
-                    className={`py-2.5 md:py-3.5 text-right font-bold text-[10px] md:text-xs ${coin.isUp ? "text-emerald-400" : "text-red-500"}`}
-                  >
-                    {coin.change}
-                  </td>
-
-                  {/* Action Button */}
-                  <td className="py-2.5 md:py-3.5 text-center">
-                    <button className="bg-[#1a202c] hover:bg-emerald-600 text-emerald-500 hover:text-white px-3 py-1 md:px-5 md:py-1.5 rounded text-[9px] md:text-xs font-bold transition-all opacity-90 md:opacity-80 group-hover:opacity-100 shadow-sm border border-[#2a303c] hover:border-emerald-500">
-                      Trade
-                    </button>
+              {filteredAssets.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-6 text-gray-500 font-mono text-xs">
+                    No assets match this criteria.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredAssets.map((coin) => (
+                  <tr
+                    key={coin.symbol}
+                    className="border-b border-[#1a202c]/50 hover:bg-[#131722] transition-colors group"
+                  >
+                    {/* Asset Column */}
+                    <td className="py-2.5 md:py-3.5 pl-2">
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <div
+                          className={`w-6 h-6 md:w-8 md:h-8 rounded-full ${coin.color} flex justify-center items-center text-white font-bold text-[8px] md:text-[10px] shadow-lg shrink-0`}
+                        >
+                          {coin.symbol.charAt(0)}
+                        </div>
+                        <div>
+                          <span className="text-white font-bold text-[11px] md:text-sm tracking-wide block leading-tight">
+                            {coin.symbol}
+                          </span>
+                          <span className="text-gray-500 text-[9px] md:text-[10px]">
+                            {coin.name}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Price */}
+                    <td className="py-2.5 md:py-3.5 text-right text-white font-mono text-[11px] md:text-sm">
+                      ${coin.price}
+                    </td>
+
+                    {/* Volume */}
+                    <td className="py-2.5 md:py-3.5 text-right text-gray-400 font-mono text-[9px] md:text-xs">
+                      {coin.vol}
+                    </td>
+
+                    {/* Change */}
+                    <td
+                      className={`py-2.5 md:py-3.5 text-right font-bold text-[10px] md:text-xs ${coin.isUp ? "text-emerald-400" : "text-red-500"}`}
+                    >
+                      {coin.change}
+                    </td>
+
+                    {/* Action Button */}
+                    <td className="py-2.5 md:py-3.5 text-center">
+                      <button 
+                        onClick={() => handleTradeClick(coin.symbol)}
+                        className="bg-[#1a202c] hover:bg-emerald-600 text-emerald-500 hover:text-white px-3 py-1 md:px-5 md:py-1.5 rounded text-[9px] md:text-xs font-bold transition-all opacity-90 md:opacity-80 group-hover:opacity-100 shadow-sm border border-[#2a303c] hover:border-emerald-500"
+                      >
+                        Trade
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

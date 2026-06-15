@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AreaChart,
   Area,
@@ -23,92 +23,7 @@ import {
 } from "react-icons/fi";
 
 // ════════════════════════════════════════════════════════════
-// 1. MOCK DATA (Trade-by-Trade)
-// ════════════════════════════════════════════════════════════
-
-// Generating Trade-by-Trade Cumulative P/L data
-const generateTradeData = () => {
-  let cumulative = 10000; // Starting Balance
-  const data = [];
-  for (let i = 1; i <= 50; i++) {
-    // Random profit or loss per trade
-    const pnl = Math.floor(Math.random() * 400) - 150;
-    cumulative += pnl;
-    data.push({
-      trade: `Trade ${i}`,
-      pnl: pnl,
-      cumulative: cumulative,
-      isWin: pnl > 0,
-    });
-  }
-  return data;
-};
-
-const tradeData = generateTradeData();
-
-// Best & Worst Trades Data
-const bestTrades = [
-  {
-    id: 1,
-    asset: "BTC/USDT",
-    type: "Long",
-    pnl: "+$450.00",
-    pct: "+12.5%",
-    date: "12 Jun",
-  },
-  {
-    id: 2,
-    asset: "ETH/USDT",
-    type: "Long",
-    pnl: "+$320.50",
-    pct: "+8.4%",
-    date: "10 Jun",
-  },
-  {
-    id: 3,
-    asset: "SOL/USDT",
-    type: "Short",
-    pnl: "+$180.20",
-    pct: "+5.2%",
-    date: "08 Jun",
-  },
-];
-
-const worstTrades = [
-  {
-    id: 1,
-    asset: "XRP/USDT",
-    type: "Long",
-    pnl: "-$150.00",
-    pct: "-4.5%",
-    date: "11 Jun",
-  },
-  {
-    id: 2,
-    asset: "DOGE/USDT",
-    type: "Long",
-    pnl: "-$95.20",
-    pct: "-8.1%",
-    date: "09 Jun",
-  },
-  {
-    id: 3,
-    asset: "ADA/USDT",
-    type: "Short",
-    pnl: "-$60.00",
-    pct: "-2.2%",
-    date: "05 Jun",
-  },
-];
-
-// Win/Loss Pie Chart Data
-const winLossData = [
-  { name: "Winning Trades", value: 107, color: "#10b981" }, // Emerald 500
-  { name: "Losing Trades", value: 49, color: "#ef4444" }, // Red 500
-];
-
-// ════════════════════════════════════════════════════════════
-// 2. INTERNAL COMPONENTS
+// 1. INTERNAL COMPONENTS (UI UNCHANGED)
 // ════════════════════════════════════════════════════════════
 
 // Custom Tooltip for Recharts
@@ -122,13 +37,13 @@ const CustomTooltip = ({ active, payload, label }) => {
         </p>
         <p className="text-white font-mono text-sm mb-1">
           Balance:{" "}
-          <span className="font-bold">${data.cumulative.toLocaleString()}</span>
+          <span className="font-bold">${data.cumulative.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </p>
-        <p
-          className={`font-mono text-xs font-bold ${data.pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}
-        >
-          Trade P/L: {data.pnl >= 0 ? "+" : ""}${data.pnl}
-        </p>
+        {label !== "Start" && (
+          <p className={`font-mono text-xs font-bold ${data.pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            Trade P/L: {data.pnl >= 0 ? "+" : "-"}${Math.abs(data.pnl).toFixed(2)}
+          </p>
+        )}
       </div>
     );
   }
@@ -136,28 +51,27 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 // Summary Card Component
-const StatCard = ({ title, value, subtext, icon, isProfit }) => (
+const StatCard = ({ title, value, subtext, icon, isProfit, isWarning }) => (
   <div className="bg-[#0a0d11] border border-white/30 rounded-xl p-4 md:p-5 flex flex-col justify-between hover:border-white/20 transition-colors group relative overflow-hidden">
     {isProfit && (
       <div className="absolute -right-6 -top-6 w-20 h-20 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all"></div>
+    )}
+    {isWarning && (
+      <div className="absolute -right-6 -top-6 w-20 h-20 bg-red-500/10 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all"></div>
     )}
     <div className="flex justify-between items-start mb-3 relative z-10">
       <h3 className="text-gray-400 text-[10px] md:text-xs font-bold uppercase tracking-wider">
         {title}
       </h3>
-      <span
-        className={`p-1.5 rounded-lg bg-white/5 ${isProfit ? "text-emerald-400" : "text-sky-400"}`}
-      >
+      <span className={`p-1.5 rounded-lg bg-white/5 ${isProfit ? "text-emerald-400" : isWarning ? "text-red-400" : "text-sky-400"}`}>
         {icon}
       </span>
     </div>
     <div className="relative z-10">
-      <p
-        className={`text-xl md:text-2xl font-bold font-mono tracking-tight ${isProfit ? "text-emerald-400" : "text-white"}`}
-      >
+      <p className={`text-xl md:text-2xl font-bold font-mono tracking-tight ${isProfit ? "text-emerald-400" : isWarning ? "text-red-400" : "text-white"}`}>
         {value}
       </p>
-      <p className="text-[9px] md:text-[10px] font-bold text-emerald-500/80 mt-1">
+      <p className={`text-[9px] md:text-[10px] font-bold mt-1 ${isWarning ? "text-red-500/80" : "text-emerald-500/80"}`}>
         {subtext}
       </p>
     </div>
@@ -165,10 +79,118 @@ const StatCard = ({ title, value, subtext, icon, isProfit }) => (
 );
 
 // ════════════════════════════════════════════════════════════
-// 3. MAIN PERFORMANCE COMPONENT
+// 2. MAIN PERFORMANCE COMPONENT
 // ════════════════════════════════════════════════════════════
 
 const Performance = () => {
+  // --- DYNAMIC STATES ---
+  const [tradeData, setTradeData] = useState([{ trade: "Start", pnl: 0, cumulative: 10000, isWin: true }]);
+  const [bestTrades, setBestTrades] = useState([]);
+  const [worstTrades, setWorstTrades] = useState([]);
+  const [winLossData, setWinLossData] = useState([{ name: "No Trades", value: 1, color: "#333" }]);
+  const [stats, setStats] = useState({ netPnl: 0, winRate: 0, totalTrades: 0, openPositions: 0, maxDrawdown: 0, avgWin: 0, avgLoss: 0, maxWin: 0, maxLoss: 0 });
+
+  // 🔴 THE BRAIN: Fetch and calculate everything from localStorage
+  useEffect(() => {
+    const calculatePerformance = () => {
+      const closed = JSON.parse(localStorage.getItem("closedTrades")) || [];
+      const active = JSON.parse(localStorage.getItem("activeTrades")) || [];
+      const pending = JSON.parse(localStorage.getItem("pendingOrders")) || [];
+
+      // 1. Equity Curve Data (Sort oldest to newest)
+      const sortedForCurve = [...closed].sort((a, b) => (a.closeTime || a.id) - (b.closeTime || b.id));
+      
+      let cumulative = 10000; // Starting base balance
+      let peak = 10000;
+      let maxDd = 0;
+      let wins = 0;
+      let losses = 0;
+      let totalWinAmount = 0;
+      let totalLossAmount = 0;
+      let maxWin = 0;
+      let maxLoss = 0;
+
+      const curveData = [{ trade: "Start", pnl: 0, cumulative: 10000, isWin: true }];
+
+      sortedForCurve.forEach((t, i) => {
+        const pnl = t.pnl || 0;
+        cumulative += pnl;
+
+        if (pnl >= 0) {
+          wins++;
+          totalWinAmount += pnl;
+          if (pnl > maxWin) maxWin = pnl;
+        } else {
+          losses++;
+          totalLossAmount += pnl;
+          if (pnl < maxLoss) maxLoss = pnl;
+        }
+
+        if (cumulative > peak) peak = cumulative;
+        const drawdown = peak > 0 ? ((peak - cumulative) / peak) * 100 : 0;
+        if (drawdown > maxDd) maxDd = drawdown;
+
+        curveData.push({
+          trade: `Trade ${i + 1}`,
+          pnl: pnl,
+          cumulative: cumulative,
+          isWin: pnl >= 0,
+        });
+      });
+
+      setTradeData(curveData);
+
+      // 2. Win/Loss Pie Data
+      if (wins > 0 || losses > 0) {
+        setWinLossData([
+          { name: "Winning Trades", value: wins, color: "#10b981" },
+          { name: "Losing Trades", value: losses, color: "#ef4444" },
+        ]);
+      } else {
+        setWinLossData([{ name: "No Trades", value: 1, color: "#1a202c" }]);
+      }
+
+      // 3. Stats Calculation
+      setStats({
+        netPnl: cumulative - 10000,
+        winRate: closed.length > 0 ? (wins / closed.length) * 100 : 0,
+        totalTrades: closed.length,
+        openPositions: active.length + pending.length,
+        maxDrawdown: maxDd,
+        avgWin: wins > 0 ? totalWinAmount / wins : 0,
+        avgLoss: losses > 0 ? totalLossAmount / losses : 0,
+        maxWin: maxWin,
+        maxLoss: maxLoss
+      });
+
+      // 4. Best & Worst Trades Tables
+      const sortedByPnl = [...closed].sort((a, b) => (b.pnl || 0) - (a.pnl || 0));
+      const formatDate = (ts) => new Date(ts).toLocaleString('en-GB', { day: '2-digit', month: 'short' });
+
+      const formatTrade = (t) => ({
+        id: t.id,
+        asset: `${t.asset}/USDT`,
+        type: t.type === "Buy" ? "Long" : "Short",
+        pnl: `${t.pnl >= 0 ? '+' : '-'}$${Math.abs(t.pnl).toFixed(2)}`,
+        pct: `${t.pnl >= 0 ? '+' : '-'}${Math.abs(((t.pnl) / (t.investment || 1)) * 100).toFixed(2)}%`,
+        date: formatDate(t.closeTime || t.id),
+        isProfit: t.pnl >= 0
+      });
+
+      setBestTrades(sortedByPnl.filter(t => t.pnl > 0).slice(0, 5).map(formatTrade));
+      setWorstTrades([...sortedByPnl].filter(t => t.pnl < 0).reverse().slice(0, 5).map(formatTrade));
+    };
+
+    calculatePerformance();
+    window.addEventListener("storage", calculatePerformance);
+    window.addEventListener("tradesUpdated", calculatePerformance);
+
+    return () => {
+      window.removeEventListener("storage", calculatePerformance);
+      window.removeEventListener("tradesUpdated", calculatePerformance);
+    };
+  }, []);
+
   return (
     <div
       className="mx-2 md:mx-4 my-6 flex flex-col gap-6"
@@ -176,8 +198,6 @@ const Performance = () => {
     >
       {/* ─── HEADER ─── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 mt-2 md:mt-0">
-        
-        {/* Title & Description */}
         <div>
           <h1 className="text-white font-extrabold text-base md:text-lg tracking-wide flex items-center gap-2">
             <FiTrendingUp className="text-emerald-400" size={16} />
@@ -188,16 +208,11 @@ const Performance = () => {
           </p>
         </div>
 
-        {/* Responsive Tabs */}
         <div className="flex bg-[#0a0d11] border border-white/30 rounded-lg p-1 w-full md:w-auto overflow-x-auto custom-scrollbar">
-          {["Last 50 Trades", "Last 100 Trades", "All Time"].map((tab, i) => (
+          {["All Time Analytics"].map((tab, i) => (
             <button
               key={tab}
-              className={`px-3 py-1.5 text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap shrink-0 ${
-                i === 0 
-                  ? "bg-[#1a202c] text-white shadow-sm border border-white/10" 
-                  : "text-gray-500 hover:text-white hover:bg-white/5"
-              }`}
+              className={`px-3 py-1.5 text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap shrink-0 bg-[#1a202c] text-white shadow-sm border border-white/10`}
             >
               {tab}
             </button>
@@ -209,37 +224,40 @@ const Performance = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
         <StatCard
           title="Net P/L"
-          value="+$2,450.80"
-          subtext="+$340.00 this week"
+          value={`${stats.netPnl >= 0 ? '+' : '-'}$${Math.abs(stats.netPnl).toFixed(2)}`}
+          subtext="Total Realized Return"
           icon={<FiTrendingUp size={16} />}
-          isProfit={true}
+          isProfit={stats.netPnl >= 0}
+          isWarning={stats.netPnl < 0}
         />
         <StatCard
           title="Win Rate"
-          value="68.42%"
-          subtext="+2.1% vs avg"
+          value={`${stats.winRate.toFixed(1)}%`}
+          subtext={stats.winRate > 50 ? "Profitable Strategy" : "Needs Optimization"}
           icon={<FiTarget size={16} />}
-          isProfit={true}
+          isProfit={stats.winRate >= 50}
+          isWarning={stats.winRate > 0 && stats.winRate < 50}
         />
         <StatCard
           title="Total Trades"
-          value="156"
-          subtext="32 open positions"
+          value={stats.totalTrades}
+          subtext={`${stats.openPositions} active/pending`}
           icon={<FiAward size={16} />}
           isProfit={false}
         />
         <StatCard
           title="Max Drawdown"
-          value="-4.20%"
-          subtext="Healthy risk level"
-          icon={<FiAlertOctagon size={16} className="text-red-400" />}
+          value={`-${stats.maxDrawdown.toFixed(2)}%`}
+          subtext={stats.maxDrawdown < 10 ? "Healthy risk level" : "High risk exposure"}
+          icon={<FiAlertOctagon size={16} />}
           isProfit={false}
+          isWarning={stats.maxDrawdown > 10}
         />
       </div>
 
       {/* ─── 2. MAIN SPLIT (75% Chart / 25% Stats) ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 md:gap-6">
-        {/* LEFT PANEL (75% width): Trade-by-Trade Line Chart */}
+        {/* LEFT PANEL: Equity Curve */}
         <div className="lg:col-span-3 bg-[#0a0d11] border border-white/30 rounded-xl p-4 md:p-6 shadow-lg flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-white font-bold text-sm md:text-base tracking-wide flex items-center gap-2">
@@ -255,43 +273,25 @@ const Performance = () => {
                 margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
               >
                 <defs>
-                  <linearGradient
-                    id="colorCumulative"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={stats.netPnl >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0.4} />
+                    <stop offset="95%" stopColor={stats.netPnl >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(255,255,255,0.05)"
-                  vertical={false}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="trade"
                   stroke="rgba(255,255,255,0.2)"
-                  tick={{
-                    fill: "#ffffff",
-                    fontSize: 10,
-                    fontFamily: "DM Mono",
-                  }}
+                  tick={{ fill: "#ffffff", fontSize: 10, fontFamily: "DM Mono" }}
                   tickLine={false}
                   axisLine={false}
                   minTickGap={30}
                 />
                 <YAxis
-                  domain={["dataMin - 200", "dataMax + 200"]}
+                  domain={['auto', 'auto']}
                   stroke="rgba(255,255,255,0.2)"
-                  tick={{
-                    fill: "#f9fbfe",
-                    fontSize: 10,
-                    fontFamily: "DM Mono",
-                  }}
-                  tickFormatter={(val) => `$${val}`}
+                  tick={{ fill: "#f9fbfe", fontSize: 10, fontFamily: "DM Mono" }}
+                  tickFormatter={(val) => `$${val.toLocaleString()}`}
                   tickLine={false}
                   axisLine={false}
                   width={60}
@@ -300,24 +300,18 @@ const Performance = () => {
                 <Area
                   type="monotone"
                   dataKey="cumulative"
-                  stroke="#10b981"
+                  stroke={stats.netPnl >= 0 ? "#10b981" : "#ef4444"}
                   strokeWidth={2.5}
                   fill="url(#colorCumulative)"
-                  activeDot={{
-                    r: 6,
-                    fill: "#10b981",
-                    stroke: "#0a0d11",
-                    strokeWidth: 2,
-                  }}
+                  activeDot={{ r: 6, fill: stats.netPnl >= 0 ? "#10b981" : "#ef4444", stroke: "#0a0d11", strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* RIGHT PANEL (25% width): Mini Stats & Distribution */}
+        {/* RIGHT PANEL: Mini Stats & Distribution */}
         <div className="lg:col-span-1 flex flex-col gap-5 md:gap-6">
-          {/* Win/Loss Distribution Donut */}
           <div className="bg-[#0a0d11] border border-white/30 rounded-xl p-4 md:p-5 flex-1 shadow-lg">
             <h2 className="text-white font-bold text-xs md:text-sm tracking-wide mb-4">
               Trade Distribution
@@ -338,21 +332,14 @@ const Performance = () => {
                     ))}
                   </Pie>
                   <RechartsTooltip
-                    contentStyle={{
-                      backgroundColor: "#0a0d11",
-                      borderColor: "rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                      color: "#fff",
-                    }}
+                    contentStyle={{ backgroundColor: "#0a0d11", borderColor: "rgba(255,255,255,0.1)", borderRadius: "8px", fontSize: "12px", color: "#fff" }}
                     itemStyle={{ color: "#fff" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
-              {/* Center Text */}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-white font-bold text-lg font-mono">
-                  156
+                  {stats.totalTrades}
                 </span>
                 <span className="text-gray-500 text-[9px] uppercase font-bold">
                   Trades
@@ -360,7 +347,6 @@ const Performance = () => {
               </div>
             </div>
 
-            {/* Legend */}
             <div className="mt-4 flex flex-col gap-2">
               <div className="flex justify-between items-center text-[10px] md:text-xs">
                 <div className="flex items-center gap-2">
@@ -368,7 +354,7 @@ const Performance = () => {
                   <span className="text-gray-400">Winning Trades</span>
                 </div>
                 <span className="text-white font-mono font-bold">
-                  107 (68.5%)
+                  {winLossData[0]?.value === 1 && stats.totalTrades === 0 ? 0 : winLossData[0]?.value} ({stats.totalTrades > 0 ? stats.winRate.toFixed(1) : 0}%)
                 </span>
               </div>
               <div className="flex justify-between items-center text-[10px] md:text-xs">
@@ -377,57 +363,26 @@ const Performance = () => {
                   <span className="text-gray-400">Losing Trades</span>
                 </div>
                 <span className="text-white font-mono font-bold">
-                  49 (31.4%)
+                  {winLossData[1] ? winLossData[1].value : 0} ({stats.totalTrades > 0 ? (100 - stats.winRate).toFixed(1) : 0}%)
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Key Metrics Summary */}
           <div className="bg-[#0a0d11] border border-white/30 rounded-xl p-4 md:p-5 flex-1 shadow-lg">
             <h2 className="text-white font-bold text-xs md:text-sm tracking-wide mb-4">
               Performance Summary
             </h2>
             <div className="flex flex-col gap-3.5">
               {[
-                {
-                  label: "Average Win",
-                  val: "+$345.80",
-                  color: "text-emerald-400",
-                },
-                {
-                  label: "Average Loss",
-                  val: "-$125.40",
-                  color: "text-red-400",
-                },
-                {
-                  label: "Largest Win",
-                  val: "+$1,450.00",
-                  color: "text-emerald-400",
-                },
-                {
-                  label: "Largest Loss",
-                  val: "-$450.00",
-                  color: "text-red-400",
-                },
-                {
-                  label: "Avg Trade Duration",
-                  val: "2h 45m",
-                  color: "text-white",
-                },
+                { label: "Average Win", val: `+$${stats.avgWin.toFixed(2)}`, color: "text-emerald-400" },
+                { label: "Average Loss", val: `-$${Math.abs(stats.avgLoss).toFixed(2)}`, color: "text-red-400" },
+                { label: "Largest Win", val: `+$${stats.maxWin.toFixed(2)}`, color: "text-emerald-400" },
+                { label: "Largest Loss", val: `-$${Math.abs(stats.maxLoss).toFixed(2)}`, color: "text-red-400" },
               ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex justify-between items-center border-b border-white/5 pb-2 last:border-0 last:pb-0"
-                >
-                  <span className="text-gray-300 text-[10px] md:text-xs">
-                    {item.label}
-                  </span>
-                  <span
-                    className={`font-mono font-bold text-[10px] md:text-xs ${item.color}`}
-                  >
-                    {item.val}
-                  </span>
+                <div key={i} className="flex justify-between items-center border-b border-white/5 pb-2 last:border-0 last:pb-0">
+                  <span className="text-gray-300 text-[10px] md:text-xs">{item.label}</span>
+                  <span className={`font-mono font-bold text-[10px] md:text-xs ${item.color}`}>{item.val}</span>
                 </div>
               ))}
             </div>
@@ -441,11 +396,8 @@ const Performance = () => {
         <div className="bg-[#0a0d11] border border-white/30 rounded-xl p-4 md:p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-emerald-400 font-bold text-xs md:text-sm tracking-wide flex items-center gap-2">
-              <FiArrowUpRight /> Best Trades
+              <FiArrowUpRight /> Best Trades (Top 5)
             </h2>
-            <button className="text-gray-500 text-[10px] hover:text-white transition-colors">
-              View All
-            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -458,25 +410,14 @@ const Performance = () => {
                 </tr>
               </thead>
               <tbody className="text-[11px] md:text-xs">
-                {bestTrades.map((trade) => (
-                  <tr
-                    key={trade.id}
-                    className="border-b border-white/5 hover:bg-white/5 transition-colors"
-                  >
-                    <td className="py-2.5 font-bold text-white">
-                      {trade.asset}
-                    </td>
-                    <td
-                      className={`py-2.5 text-center font-bold ${trade.type === "Long" ? "text-emerald-400" : "text-red-400"}`}
-                    >
-                      {trade.type}
-                    </td>
-                    <td className="py-2.5 text-right font-mono text-emerald-400 font-bold">
-                      {trade.pnl}
-                    </td>
-                    <td className="py-2.5 text-right text-gray-300">
-                      {trade.date}
-                    </td>
+                {bestTrades.length === 0 ? (
+                  <tr><td colSpan="4" className="text-center py-4 text-gray-500 font-mono">No profitable trades yet</td></tr>
+                ) : bestTrades.map((trade) => (
+                  <tr key={trade.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td className="py-2.5 font-bold text-white">{trade.asset}</td>
+                    <td className={`py-2.5 text-center font-bold ${trade.type === "Long" ? "text-emerald-400" : "text-red-400"}`}>{trade.type}</td>
+                    <td className="py-2.5 text-right font-mono text-emerald-400 font-bold">{trade.pnl}</td>
+                    <td className="py-2.5 text-right text-gray-300">{trade.date}</td>
                   </tr>
                 ))}
               </tbody>
@@ -488,11 +429,8 @@ const Performance = () => {
         <div className="bg-[#0a0d11] border border-white/30 rounded-xl p-4 md:p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-red-400 font-bold text-xs md:text-sm tracking-wide flex items-center gap-2">
-              <FiArrowDownRight /> Worst Trades
+              <FiArrowDownRight /> Worst Trades (Bottom 5)
             </h2>
-            <button className="text-gray-500 text-[10px] hover:text-white transition-colors">
-              View All
-            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -505,25 +443,14 @@ const Performance = () => {
                 </tr>
               </thead>
               <tbody className="text-[11px] md:text-xs">
-                {worstTrades.map((trade) => (
-                  <tr
-                    key={trade.id}
-                    className="border-b border-white/5 hover:bg-white/5 transition-colors"
-                  >
-                    <td className="py-2.5 font-bold text-white">
-                      {trade.asset}
-                    </td>
-                    <td
-                      className={`py-2.5 text-center font-bold ${trade.type === "Long" ? "text-emerald-400" : "text-red-400"}`}
-                    >
-                      {trade.type}
-                    </td>
-                    <td className="py-2.5 text-right font-mono text-red-400 font-bold">
-                      {trade.pnl}
-                    </td>
-                    <td className="py-2.5 text-right text-gray-300">
-                      {trade.date}
-                    </td>
+                {worstTrades.length === 0 ? (
+                  <tr><td colSpan="4" className="text-center py-4 text-gray-500 font-mono">No losing trades yet</td></tr>
+                ) : worstTrades.map((trade) => (
+                  <tr key={trade.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td className="py-2.5 font-bold text-white">{trade.asset}</td>
+                    <td className={`py-2.5 text-center font-bold ${trade.type === "Long" ? "text-emerald-400" : "text-red-400"}`}>{trade.type}</td>
+                    <td className="py-2.5 text-right font-mono text-red-400 font-bold">{trade.pnl}</td>
+                    <td className="py-2.5 text-right text-gray-300">{trade.date}</td>
                   </tr>
                 ))}
               </tbody>
