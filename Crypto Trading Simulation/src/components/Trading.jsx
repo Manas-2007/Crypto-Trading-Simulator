@@ -170,34 +170,46 @@ const TradingViewChart = memo(({ activeTrades, onCloseTrade, symbol }) => {
 
   useEffect(() => {
     if (!container.current) return; 
+    
+    container.current.innerHTML = "";
 
-    if (container.current) {
-      container.current.innerHTML = "";
-    }
+    // 1. Settings se locked timeframe uthao
+    const prefs = JSON.parse(localStorage.getItem("userPreferences")) || {};
+    const savedTimeframe = prefs.timeframe || "1D";
+
+    // 2. TradingView ke format mein convert karo
+    const intervalMap = {
+      "15M": "15",
+      "1H": "60",
+      "4H": "240",
+      "1D": "D",
+      "1W": "W"
+    };
+    const tvInterval = intervalMap[savedTimeframe] || "D";
+
     const script = document.createElement("script");
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
     script.type = "text/javascript";
     script.async = true;
-    script.innerHTML = `
-    {
-      "autosize": true,
-      "symbol": "${symbol}", 
-      "interval": "1", 
-      "timezone": "Etc/UTC",
-      "theme": "dark",
-      "style": "1",
-      "locale": "en",
-      "enable_publishing": false,
-      "backgroundColor": "#05070a",
-      "gridColor": "rgba(255, 255, 255, 0.05)",
-      "hide_top_toolbar": false,
-      "hide_side_toolbar": false,
-      "hide_legend": false,
-      "save_image": false,
-      "allow_symbol_change": false,
-      "toolbar_bg": "#05070a",
-      "support_host": "https://www.tradingview.com"
-    }`;
+    script.innerHTML = JSON.stringify({
+      autosize: true,
+      symbol: symbol, 
+      interval: tvInterval, // 🔴 YAHAN TIMEFRAME DYNAMIC HO GAYA
+      timezone: "Etc/UTC",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      enable_publishing: false,
+      backgroundColor: "#05070a",
+      gridColor: "rgba(255, 255, 255, 0.05)",
+      hide_top_toolbar: false,
+      hide_side_toolbar: false,
+      hide_legend: false,
+      save_image: false,
+      allow_symbol_change: false,
+      toolbar_bg: "#05070a",
+      support_host: "https://www.tradingview.com"
+    });
     container.current.appendChild(script);
   }, [symbol]);
 

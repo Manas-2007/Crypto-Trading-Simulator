@@ -27,6 +27,7 @@ const ToggleSwitch = ({ enabled, onChange }) => (
 const SelectDropdown = ({ value, options, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -89,12 +90,14 @@ const Settings = () => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [alertsEnabled, setAlertsEnabled] = useState(true);
   const [confirmTrades, setConfirmTrades] = useState(true);
+  const [orderType, setOrderType] = useState("Market"); // New state for default order type
 
   // 🔴 LOAD SAVED SETTINGS ON MOUNT
   useEffect(() => {
     const prefs = JSON.parse(localStorage.getItem("userPreferences")) || {};
     setTheme(prefs.theme || "dark");
     setCurrency(prefs.currency || "INR");
+    setOrderType(prefs.orderType || "Market");
     setTimeframe(prefs.timeframe || "1D");
     setChartType(prefs.chartType || "Candles");
     setSoundEnabled(prefs.soundEnabled !== false); // default true
@@ -104,7 +107,7 @@ const Settings = () => {
 
   // 🔴 SAVE PREFERENCES
   const handleSave = () => {
-    const prefs = { theme, currency, timeframe, chartType, soundEnabled, alertsEnabled, confirmTrades };
+    const prefs = { theme, currency, orderType, timeframe, chartType, soundEnabled, alertsEnabled, confirmTrades };
     localStorage.setItem("userPreferences", JSON.stringify(prefs));
     
     // Theme Application Logic (Adds class to body)
@@ -226,30 +229,26 @@ const Settings = () => {
             />
           </div>
 
-          {/* Currency (INR Focused) */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/5 rounded-lg text-gray-400">
-                <FiDollarSign size={18} />
-              </div>
-              <div>
-                <p className="text-white text-xs md:text-sm font-bold">
-                  Default Currency
-                </p>
-                <p className="text-gray-500 text-[9px] md:text-[11px]">
-                  Base currency for P/L and balances
-                </p>
-              </div>
-            </div>
-            <SelectDropdown
-              value={currency}
-              onChange={setCurrency}
-              options={[
-                { label: "INR (₹)", value: "INR" },
-                { label: "USD ($)", value: "USD" },
-              ]}
-            />
-          </div>
+          {/* Default Order Type */}
+<div className="flex justify-between items-center">
+  <div className="flex items-center gap-3">
+    <div className="p-2 bg-white/5 rounded-lg text-gray-400">
+      <FiBarChart2 size={18} />
+    </div>
+    <div>
+      <p className="text-white text-xs md:text-sm font-bold">Default Order Type</p>
+      <p className="text-gray-500 text-[9px] md:text-[11px]">Preferred execution method</p>
+    </div>
+  </div>
+  <SelectDropdown
+    value={orderType} // Nayi State: const [orderType, setOrderType] = useState("Market");
+    onChange={setOrderType}
+    options={[
+      { label: "Market Order", value: "Market" },
+      { label: "Limit Order", value: "Limit" },
+    ]}
+  />
+</div>
 
           {/* Timeframe */}
           <div className="flex justify-between items-center">

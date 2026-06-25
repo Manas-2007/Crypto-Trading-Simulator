@@ -42,8 +42,22 @@ const MarketChart = () => {
   // 🔴 2. Dynamic TradingView Chart Injection
   useEffect(() => {
     if (containerRef.current) {
-      // Clear previous chart before injecting new one
       containerRef.current.innerHTML = "";
+
+      // Settings se timeframe uthao (Default '1D' rakho agar na mile)
+      const prefs = JSON.parse(localStorage.getItem("userPreferences")) || {};
+      const savedTimeframe = prefs.timeframe || "1D";
+
+      // TradingView ke format mein convert karo
+      const intervalMap = {
+        "15M": "15",
+        "1H": "60",
+        "4H": "240",
+        "1D": "D",
+        "1W": "W"
+      };
+      const tvInterval = intervalMap[savedTimeframe] || "D";
+
       const script = document.createElement("script");
       script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
       script.type = "text/javascript";
@@ -51,7 +65,7 @@ const MarketChart = () => {
       script.innerHTML = JSON.stringify({
         autosize: true,
         symbol: `BINANCE:${activeCoin}USDT`,
-        interval: "D",
+        interval: tvInterval, // 🔴 YAHAN HUMNE TIMEFRAME LOCK KAR DIYA!
         timezone: "Etc/UTC",
         theme: "dark",
         style: "1",
